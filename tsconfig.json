@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2020", // Or higher, depending on the features you need
+    "module": "ESNext", // Allows ECMAScript Modules (ESM)
+    "esModuleInterop": true, // Allows importing CommonJS modules from ESM
+    "allowSyntheticDefaultImports": true, // Allows default imports from modules with no default export
+    "strict": true, // Optional: Enables strict type checking
+    "moduleResolution": "node", // Resolves modules using Node.js resolution algorithm
+    "resolveJsonModule": true, // Allows importing JSON files as modules
+    "lib": ["ESNext"] // Specifies the libraries to be included in the compilation,
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts"], // Include your TypeScript source files
+  "exclude": ["node_modules"] // Exclude node_modules directory
+}

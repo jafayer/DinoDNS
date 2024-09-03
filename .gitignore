@@ -1,0 +1,22 @@
+node_modules
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Build artifacts
+dist
+
+# Test coverage reports
+coverage/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Miscellaneous
+.DS_Store
+Thumbs.db
