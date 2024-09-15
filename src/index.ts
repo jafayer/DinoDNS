@@ -1,68 +1,85 @@
-import { Server } from "./server/Server";
-import dns from 'dns';
+import { ConsoleLogger } from "./common/logger";
+import { DNSServer } from "./server";
+import { DNSOverTCP, DNSOverUDP } from "./common/network";
+import dnsPacket from 'dns-packet';
 
-const s = new Server();
+const logger = new ConsoleLogger(false, true);
+const s = new DNSServer({
+  networks: [new DNSOverTCP('localhost', 1053), new DNSOverUDP('localhost', 1053)],
+  cache: {},
+  logger: logger.handle.bind(logger),
+});
+
+type MapToRecord = {[key: string]: dnsPacket.Answer | dnsPacket.Answer[]};
+
+const domains: {[key: string]: MapToRecord} = {
+    "example.com": {
+        "A": [
+            {
+                type: "A",
+                name: "example.com",
+                data: "127.0.0.1"
+            },
+            {
+                type: "A",
+                name: "example.com",
+                data: "127.0.0.2"
+            },
+        ],
+        "SOA": {
+            type: "SOA",
+            name: "example.com",
+            data: {
+                mname: "ns1.example.com",
+                rname: "admin.example.com",
+                serial: 2021101001,
+                refresh: 3600,
+                retry: 600,
+                expire: 604800,
+                minimum: 60,
+            }
+        },
+    }
+}
+s.use((req, res, next) => {
+  console.log(req.packet.questions![0].name);
+  next();
+});
 
 s.use((req, res, next) => {
-    console.log(`Request from ${req.connection.remoteAddress} for ${req.packet.questions![0].name} (${req.packet.questions![0].type})`);
-    next();
+  console.log("Middleware 2");
+  next();
 });
 
-// respond 127.0.0.2 for all requests to the below domains
-const localDomains = [
-    'example.com',
-    'example.net',
-    'example.org'
-]
-
-s.use(async (req, res, next) => {
-    new Promise((resolve) => {
-        setTimeout(() => {
-            console.log('timeout');
-            resolve(undefined);
-        }, 1000);
+s.handle('example.net', (req, res) => {
+  console.log("Handling request for example.com");
+    res.packet.answers?.push({
+        type: "SOA",
+        name: "example.com",
+        data: {
+            mname: "ns1.example.com",
+            rname: "admin.example.com",
+            serial: 2021101001,
+            refresh: 3600,
+            retry: 600,
+            expire: 604800,
+            minimum: 60,
+        }
     });
-
-    next()
+    res.packet.answers?.push({
+        type: "A",
+        name: "example.com",
+        data: "127.0.0.1",
+    });
+    res.resolve();
 });
 
-s.handle('*.com', (req, res) => {
-    switch (req.packet.questions![0].type) {
-        case 'A':
-            res.answer({name: req.packet.questions![0].name, type: 'A', data: req.connection.remoteAddress, ttl: 300});
-            break;
-        case 'MX':
-            res.answer({name: req.packet.questions![0].name, type: 'MX', data: {preference: 10, exchange: 'test'}, ttl: 300});
-            break;
-        case 'TXT':
-            res.answer({name: req.packet.questions![0].name, type: 'TXT', data: ["hi", "there"], ttl: 300});
-            break;
-        case "NS":
-            res.answer({name: req.packet.questions![0].name, type: 'NS', data: 'test.example.com', ttl: 300});
-            break;
-        case "SOA":
-            res.answer<'SOA'>({
-                type: 'SOA',
-                name: req.packet.questions![0].name,
-                data: {
-                    mname: 'ns1.example.com',
-                    rname: 'hostmaster.example.com',
-                    serial: 20210101,
-                    refresh: 3600,
-                    retry: 600,
-                    expire: 604800,
-                    minimum: 300,
-                },
-            });
-            break;
-        default:
-            // create a NOTIMP response
-            res.packet.flags = 0x0004;
-            res.resolve();
-            return;
-    }
+s.handle('example.com', (req, res) => {
+    const records = domains[req.packet.questions![0].name];
+    console.log(req.packet.questions![0].type);
+    return res.answer(
+        records[req.packet.questions![0].type as string]
+    );
 });
 
-s.listen(1053, () => {
-    console.log('Server listening on port 1053');
-});
+s.start()

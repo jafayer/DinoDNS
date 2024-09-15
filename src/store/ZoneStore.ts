@@ -1,6 +1,7 @@
 import { DNSRecord } from '../types/dns';
 import { DNSHandler } from '../server/Server';
 import type { AnswerMap, ZoneData } from "../types/dnsLibTypes";
+import {EventEmitter} from 'events';
 
 export abstract class ZoneStore {
   /**
@@ -39,4 +40,54 @@ export abstract class ZoneStore {
    * Request handler for the store
    */
   abstract handler: DNSHandler;
+}
+
+class ZoneStores extends EventEmitter implements ZoneStore {
+  private stores: ZoneStore[] = [];
+
+  constructor(stores: ZoneStore[], public requestCache: boolean = true) {
+    super();
+    this.stores = stores;
+  }
+
+  async get<T extends keyof ZoneData>(zone: string, rType?: T): Promise<ZoneData[T] | ZoneData[T][] | null> {
+    for(const store of this.stores) {
+      const data = await store.get(zone, rType);
+      if(data) {
+
+        if(this.requestCache) {
+          this.emit("cache", { zone, rType, data });
+        }
+        return data;
+      }
+    }
+
+    return null;
+  }
+
+  async set<T extends keyof ZoneData>(zone: string, rType: T, data: ZoneData[T][]): Promise<void> {
+    for(const store of this.stores) {
+      await store.set(zone, rType, data);
+    }
+  }
+
+  async append<T extends keyof ZoneData>(zone: string, rType: T, data: ZoneData[T]): Promise<void> {
+    for(const store of this.stores) {
+      await store.append(zone, rType, data);
+    }
+  }
+
+  async delete<T extends keyof ZoneData>(zone: string, rType?: T, rData?: ZoneData[T]): Promise<void> {
+    for(const store of this.stores) {
+      await store.delete(zone, rType, rData);
+    }
+  }
+
+  get handler(): DNSHandler {
+    return async (req:any, res:any, next:any) => {
+      for(const store of this.stores) {
+        await store.handler(req, res, next);
+      }
+    }
+  }
 }
