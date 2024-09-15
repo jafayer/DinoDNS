@@ -1,6 +1,7 @@
 import { DNSRequest, DNSResponse } from "./types";
 import { Network } from "../common/network";
 import { Handler } from "./types";
+import { DefaultRouter, Router } from "../common/router";
 
 export interface Server {
     networks: Network<any, any>[];
@@ -18,19 +19,21 @@ type DNSServerProps = {
     networks: Network<any, any>[];
     cache: any;
     logger?: Handler;
+    router?: Router
 }
 
 export class DNSServer implements Server {
     public networks: Network<any, any>[] = [];
     public cache: any = {};
-    private handlers: ({ domain: string, handler: Handler })[] = [];
     private middleware: Handler[] = [];
     private logger?: Handler;
+    private router: Router;
 
     constructor(props: DNSServerProps) {
         this.networks = props.networks;
         this.cache = props.cache;
         this.logger = props.logger;
+        this.router = props.router || new DefaultRouter();
 
         for(const network of this.networks) {
             network.handler = async (packet, connection) => {
@@ -74,33 +77,12 @@ export class DNSServer implements Server {
      * @returns 
      */
     handleQueries(req: DNSRequest, res: DNSResponse): void {
-        // then build handler chain
-        let potentialHandlers = this.handlers.filter(({ domain }) => {
-            return req.packet.questions?.at(0)?.name === domain;
-        })
-        .map(({ handler }) => handler);
-
-        if(potentialHandlers.length === 0) {
-            this.default(req, res);
-            return; // request will hang
+        const name = req.packet.questions?.[0]?.name;
+        if(!name) {
+            return res.errors.refused();
         }
-
-        potentialHandlers.unshift(...this.middleware);
-
-        const wrapHandler = (req: DNSRequest, res: DNSResponse) => {
-            let index = 0;
-            const next = () => {
-                if(res.finished) {
-                    return;
-                }
-
-                if(index < potentialHandlers.length) {
-                    potentialHandlers[index++](req, res, next);
-                }
-            }
-            next();
-        }
-        wrapHandler(req, res);
+        const handlers = this.router.match(name);
+        return handlers(req, res, () => {});
     }
 
     default(req: DNSRequest, res: DNSResponse): void {
@@ -109,7 +91,7 @@ export class DNSServer implements Server {
     }
 
     handle(domain: string, handler: Handler): void {
-        this.handlers.push({ domain: this.resolveWildcard(domain), handler });
+        this.router.handle(domain, handler);
     }
 
     start(): void {
