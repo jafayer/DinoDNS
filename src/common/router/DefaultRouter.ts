@@ -33,7 +33,7 @@ export class DefaultRouter implements Router {
                 handlers.push(...h.handlers);
             }
         }
-        
+
         // wrap the handlers in a chain with the middleware
         return this.wrapHandlers([...this.middleware, ...handlers]);
     }
@@ -41,9 +41,6 @@ export class DefaultRouter implements Router {
     private wrapHandlers(handlers: Handler[]): Handler {
         return (req, res) => {
             let i = 0;
-            if(res.finished) {
-                return;
-            }
           
             const nextHandler = () => {
                 if(i >= handlers.length) {
