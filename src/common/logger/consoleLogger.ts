@@ -7,13 +7,14 @@ export class ConsoleLogger implements Logger {
   constructor(private logRequests: boolean = true, private logResponses: boolean = true) {}
 
   handle(req: DNSRequest, res: DNSResponse, next: Function): void {
-    console.log(this.logRequests, this.logResponses);
     if (this.logRequests) {
       console.log(`[QUESTION] ${req.packet.questions![0].name} ${req.packet.questions![0].type} ${req.connection.remoteAddress}`);
     }
     if (this.logResponses && res.packet.answers!.length > 0) {
       console.log(`[ANSWER] ${res.packet.answers![0].name} ${res.packet.answers![0].type} ${JSON.stringify((res.packet.answers![0] as dnsPacket.StringAnswer).data)}`);
     }
+
+    next();
   }
   
   log(level: LogLevel, message: string): void {
