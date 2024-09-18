@@ -25,7 +25,6 @@ type DNSServerProps = {
 export class DNSServer implements Server {
     public networks: Network<any, any>[] = [];
     public cache: any = {};
-    private middleware: Handler[] = [];
     private logger?: Handler;
     private router: Router;
 
@@ -55,7 +54,7 @@ export class DNSServer implements Server {
     }
 
     use(handler: Handler) {
-        this.middleware.push(handler);
+        this.router.use(handler);
     }
     
     /**
