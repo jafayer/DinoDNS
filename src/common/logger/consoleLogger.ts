@@ -12,7 +12,7 @@ export class ConsoleLogger implements Logger {
       console.log(`[QUESTION] ${req.packet.questions![0].name} ${req.packet.questions![0].type} ${req.connection.remoteAddress}`);
     }
     if (this.logResponses && res.packet.answers!.length > 0) {
-      console.log(`[ANSWER] ${res.packet.answers![0].name} ${res.packet.answers![0].type} ${(res.packet.answers![0] as dnsPacket.StringAnswer).data}`);
+      console.log(`[ANSWER] ${res.packet.answers![0].name} ${res.packet.answers![0].type} ${JSON.stringify((res.packet.answers![0] as dnsPacket.StringAnswer).data)}`);
     }
   }
   
