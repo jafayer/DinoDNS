@@ -1,10 +1,7 @@
 {
   "out": "docs",
   "exclude": ["**/node_modules/**", "**/*.spec.ts"],
-  "includeDeclarations": false,
-  "mode": "file",
   "theme": "default",
-  "ignoreCompilerErrors": true,
   "excludePrivate": true,
   "excludeProtected": true,
   "excludeExternals": true
