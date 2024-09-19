@@ -3,23 +3,32 @@ import http from "http";
 import { DNSPacketSerializer, Serializer } from "../dns";
 import dnsPacket from "dns-packet";
 import type { Question, RecordType } from "dns-packet";
+import { DNSResponse } from "../../server";
+import { Connection } from "./net";
 
 export class DNSOverHTTP implements Network<dnsPacket.Packet, http.ServerResponse> {
+    serializer: Serializer<dnsPacket.Packet>;
     private server: http.Server;
-    private serializer: Serializer<dnsPacket.Packet>;
     public networkType: SupportedNetworkType = SupportedNetworkType.HTTP;
 
-    constructor(public address: string, public port: number, public handler: NetworkHandler<dnsPacket.Packet, http.ServerResponse>) {
+    constructor(public address: string, public port: number, public handler?: NetworkHandler<dnsPacket.Packet>) {
         this.server = http.createServer();
         this.serializer = new DNSPacketSerializer();
 
         this.server.on("request", (req, res) => {
+
+            if(!this.handler) {
+                res.writeHead(501);
+                res.end();
+                return;
+            }
+
             let data = "";
             req.on("data", (chunk) => {
                 data += chunk;
             });
 
-            req.on("end", () => {
+            req.on("end", async () => {
                 let packet: dnsPacket.Packet;
                 switch (req.method) {
                     // get request
@@ -37,7 +46,7 @@ export class DNSOverHTTP implements Network<dnsPacket.Packet, http.ServerRespons
                         }
 
                         if (dnsParam) {
-                            packet = this.serializer.decode(Buffer.from(dnsParam, "base64"));
+                            packet = dnsPacket.streamDecode(Buffer.from(dnsParam, "base64"));
                         } else {
                             // we have to construct our own packet
                             const question: Question = {
@@ -52,12 +61,12 @@ export class DNSOverHTTP implements Network<dnsPacket.Packet, http.ServerRespons
                                 questions: [question],
                             }
 
-                            packet = this.serializer.decode(this.serializer.encode(packet));
+                            packet = dnsPacket.streamDecode(this.serializer.encode(packet));
                         }
                         break;
                     // post request
                     case "POST":
-                        packet = this.serializer.decode(Buffer.from(data, "base64"));
+                        packet = dnsPacket.streamDecode(Buffer.from(data, "base64"));
                         break;
                     default:
                         res.writeHead(400);
@@ -65,7 +74,20 @@ export class DNSOverHTTP implements Network<dnsPacket.Packet, http.ServerRespons
                         return;
                 }
 
-                this.handler(packet, res);
+                if(!handler) {
+                    res.writeHead(501);
+                    res.end();
+                    return;
+                }
+                
+                // @ts-ignore
+                const response = await this.handler(packet, this.toConnection(res));
+
+                res.writeHead(200, {
+                    "Content-Type": "application/dns-message",
+                });
+
+                res.end(dnsPacket.streamEncode(response.packet));
             });
         });
     }
@@ -94,5 +116,13 @@ export class DNSOverHTTP implements Network<dnsPacket.Packet, http.ServerRespons
 
     off(event: string, listener: () => void): void {
         this.server.off(event, listener);
+    }
+
+    private toConnection(res: http.ServerResponse): Connection {
+        return {
+            remoteAddress: res.socket?.remoteAddress || "",
+            remotePort: res.socket?.remotePort || 0,
+            type: SupportedNetworkType.HTTP
+        }
     }
 }

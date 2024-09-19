@@ -1,15 +1,15 @@
 import dgram from "dgram";
 import dnsPacket from "dns-packet";
 import { DNSOverUDP } from "./udp";
-import { NetworkHandler } from "./net";
 import type { StringAnswer } from "dns-packet";
+import { DNSResponse, DNSRequest } from "../../server";
 
 describe("DNSOverTCP Integration Tests", () => {
     let server: DNSOverUDP;
     let client: dgram.Socket;
 
     beforeEach(() => {
-        server = new DNSOverUDP("localhost", 8053, () => {});
+        server = new DNSOverUDP("localhost", 8053);
 
         server.listen();
 
@@ -22,11 +22,13 @@ describe("DNSOverTCP Integration Tests", () => {
     });
 
     it("Should be able to parse incoming queries", (done) => {
-        server.handler = (packet, rinfo) => {
+        server.handler = async (packet, rinfo) => {
             expect(packet.questions![0].name).toBe("google.com");
             expect(packet.questions![0].type).toBe("A");
             expect(packet.questions![0].class).toBe("IN");
             done();
+
+            return new DNSRequest(packet, rinfo).toAnswer();
         };
 
         const query = dnsPacket.encode({
@@ -45,7 +47,7 @@ describe("DNSOverTCP Integration Tests", () => {
     });
 
     it("Should be able to send responses", (done) => {
-        server.handler = (packet, rinfo) => {
+        server.handler = async (packet, rinfo) => {
             const response = dnsPacket.encode({
                 type: "response",
                 id: packet.id,
@@ -61,12 +63,13 @@ describe("DNSOverTCP Integration Tests", () => {
                 ],
             });
 
-            client.send(new Uint8Array(response), rinfo.port, rinfo.address);
+            client.send(new Uint8Array(response), rinfo.remotePort, rinfo.remoteAddress);
+
+            return new DNSRequest(packet, rinfo).toAnswer();
         }
 
         // Listen for response
         client.on("message", (data) => {
-            console.log(data);
             const packet = dnsPacket.decode(data);
             expect(packet.answers!.length).toBe(1);
             expect((packet.answers![0] as StringAnswer).name).toBe("google.com");

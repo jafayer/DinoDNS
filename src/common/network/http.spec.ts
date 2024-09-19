@@ -3,6 +3,7 @@ import http from "http";
 import { Serializer, DNSPacketSerializer } from "../dns";
 import dnsPacket from "dns-packet";
 import type { StringAnswer } from "dns-packet";
+import { DNSResponse } from "../../server";
 
 
 // NOTE: shit don't work but I'm moving on for now
@@ -11,7 +12,7 @@ describe("DNSOverHTTP Integration Tests", () => {
     let client: http.ClientRequest;
 
     beforeEach(() => {
-        server = new DNSOverHTTP("localhost", 8053, () => {});
+        server = new DNSOverHTTP("localhost", 8053);
 
         server.listen();
 
@@ -24,15 +25,17 @@ describe("DNSOverHTTP Integration Tests", () => {
     });
 
     it("Should be able to parse incoming queries", (done) => {
-        server.handler = (packet, res) => {
+        server.handler = async (packet, conn) => {
             console.log(packet);
             expect(packet.questions![0].name).toBe("google.com");
             expect(packet.questions![0].type).toBe("A");
             expect(packet.questions![0].class).toBe("IN");
             done();
+
+            return new DNSResponse(packet, conn)
         };
 
-        const query = dnsPacket.encode({
+        const query = dnsPacket.streamEncode({
             type: "query",
             id: 1,
             flags: dnsPacket.RECURSION_DESIRED,
@@ -48,9 +51,8 @@ describe("DNSOverHTTP Integration Tests", () => {
     });
 
     it("Should be able to send responses", (done) => {
-        server.handler = (packet, res) => {
-            console.log(packet);
-            const response = dnsPacket.encode({
+        server.handler = async (packet, conn) => {
+            const response: dnsPacket.Packet = {
                 type: "response",
                 id: packet.id,
                 flags: dnsPacket.RECURSION_DESIRED,
@@ -63,21 +65,21 @@ describe("DNSOverHTTP Integration Tests", () => {
                         ttl: 60,
                     },
                 ],
-            });
+            };
 
-            res.write(new Uint8Array(response));
+            return new DNSResponse(response, conn);
         }
 
         // Listen for response
         client.on("data", (data) => {
-            const packet = dnsPacket.decode(data);
+            const packet = dnsPacket.streamDecode(data);
             expect(packet.answers![0].name).toBe("google.com");
             expect((packet.answers![0] as StringAnswer).data).toBe("127.0.0.1");
             done();
         });
 
         // Send query
-        const query = dnsPacket.encode({
+        const query = dnsPacket.streamEncode({
             type: "query",
             id: 1,
             flags: dnsPacket.RECURSION_DESIRED,

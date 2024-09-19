@@ -1,154 +1,115 @@
-// /**
-//  *  # Server
+import { DNSRequest, DNSResponse } from "./types";
+import { Network } from "../common/network";
+import { Handler } from "./types";
+import { DefaultRouter, Router } from "../common/router";
 
-//     The server module provides an Express-like API for creating a DNS server,
-//     complete with middleware and handlers. You can define handlers by
-//     declaring a `server.handle` route handler where you can read data from the request, and write data to the response.
+export interface Server {
+    networks: Network<any, any>[];
+    cache?: any;
 
-//     There are also helper methods that abstract away the raw request / response, such as `response.answer()`, which is shorthand for setting `response.answers = [answer]`;
+    default(req: DNSRequest, res: DNSResponse): void;
 
-//     ## Usage
+    handle(domain: string, handler: Handler): void;
 
-//     ```ts
-//     // Creates a server
-//     const server = new Server();
+    start(callback: Function): void;
+    stop(): void;
+}
 
-//     // registers logging middleware
-//     server.use(dnstap());
+type DNSServerProps = {
+    networks: Network<any, any>[];
+    cache: any;
+    logger?: Handler;
+    router?: Router
+}
 
-//     // creates a handler
-//     server.handle('*.example.com', (req, res) => {
-//         res.answer('1270.0.1');
-//     });
-//     ```
-//  */
+export class DNSServer implements Server {
+    public networks: Network<any, any>[] = [];
+    public cache: any = {};
+    private logger?: Handler;
+    private router: Router;
 
-// import { Packet } from "../dns/dnslib";
-// import { requestFromMessage } from "./request";
-// import dgram from 'dgram';
-// import { EventEmitter } from "events";
-// import { DNSRequest } from "./request";
-// import { RouteTrie } from "../trie/RouteTrie";
-// import { RecordAnswer, AnswerMap } from "../types/dnsLibTypes";
+    constructor(props: DNSServerProps) {
+        this.networks = props.networks;
+        this.cache = props.cache;
+        this.logger = props.logger;
+        this.router = props.router || new DefaultRouter();
 
-// export type DNSHandler = (req: DNSRequest, res: DNSResponse, next: Function) => void;
+        for(const network of this.networks) {
+            network.handler = async (packet, connection) => {
+                const req = new DNSRequest(packet, connection);
+                const res: DNSResponse = req.toAnswer();
+                
+                return await new Promise<DNSResponse>((resolve, reject) => {
+                    res.once("done", (t) => {
+                        if(this.logger) {
+                            this.logger(req, res, () => {});
+                        }
+                        resolve(res);
+                    });
+                    
+                    this.handleQueries(req, res);
+                });
+            };
+        }
+    }
 
-// export class DNSResponse extends EventEmitter {
-//     private finished: boolean = false;
-//     constructor(public packet: Packet) {
-//         super();
-//     }
+    use(handler: Handler) {
+        this.router.use(handler);
+    }
+    
+    /**
+     * HandleQueries is the main route handler. It first connects all middleware functions,
+     * and any functions that match the domain name in the request to a chain of handlers.
+     * 
+     * It does so by creating a function that calls each middleware with the next middleware
+     * set as the current middleware's next function. This allows each middleware to call the
+     * next middleware in the chain.
+     * 
+     * It then creates a chain of handlers that match the domain name in the request. Finally,
+     * it connects the middleware chain to the handler chain by setting the last middleware's
+     * next function to the first handler in the handler chain.
+     * 
+     * If no handlers match the domain name in the request, the default handler is called.
+     * 
+     * @param req 
+     * @param res 
+     * @returns 
+     */
+    handleQueries(req: DNSRequest, res: DNSResponse): void {
+        const name = req.packet.questions?.[0]?.name;
+        if(!name) {
+            return res.errors.refused();
+        }
+        const handlers = this.router.match(name);
+        return handlers(req, res, () => {});
+    }
 
-//     answer<T extends keyof AnswerMap>(data: RecordAnswer<T>) {
-//         this.packet.answers?.push(data);
+    default(req: DNSRequest, res: DNSResponse): void {
+        // to be implemented
+        res.errors.notImplemented();
+    }
 
-//         this.finished = true;
+    handle(domain: string, handler: Handler): void {
+        this.router.handle(domain, handler);
+    }
 
-//         this.emit('finish');
-//     }
+    start(callback: Function): void {
+        for(const network of this.networks) {
+            network.listen(network.address, network.port, () => {
+                console.log(`Listening over ${network.networkType} on ${network.address}:${network.port}`);
+            });
+        }
 
-//     resolve() {
-//         this.finished = true;
-//         this.emit('finish');
-//     }
-// }
+        callback();
+    }
 
-// export class Server extends EventEmitter {
-//     private server: dgram.Socket;
-//     private middleware: DNSHandler[] = [];
-//     private handlers: RouteTrie = new RouteTrie();
+    stop(): void {
+        for(const network of this.networks) {
+            network.close();
+        }
+    }
 
-//     constructor() {
-//         super();
-//         this.server = dgram.createSocket('udp4');
-//         this.server.on('message', (message, rinfo) => {
-//             const req = requestFromMessage(message, rinfo);
-//             const res = req.packet.responseFromQuestion();
-//             this.handleRequest(req, new DNSResponse(res));
-//         });
-//     }
-
-//     resolveWildcard(domain: string) {
-//         return domain.replace(/\*/g, '.*');
-//     }
-
-//     /**
-//      * Register a handler for a given domain.
-//      * @param domain The domain to handle
-//      * @param handler The handler to call when the domain is matched
-//      */
-//     handle(domain: string, handler: DNSHandler) {
-//         this.handlers.insert(domain, handler);
-//     }
-
-//     /**
-//      * Handle a request and call the appropriate handler.
-//      * @param req The request to handle
-//      * @param res The response to write to
-//      */
-//     async handleRequest(req: DNSRequest, res: DNSResponse) {
-//         const domain = req.packet.questions?.at(0)?.name;
-//         if (!domain) {
-//             throw new Error('No domain found in request');
-//         }
-        
-//         // assemble handler chain
-//         const handlerChain = this.handlers.search(domain);
-        
-//         if (!handlerChain) {
-//             res.packet.packet.flags = 0x0003;
-//             res.resolve();
-//             return;
-//         }
-//         console.log(handlerChain[0].toString());
-
-//         // add middleware to handler chain
-//         handlerChain.unshift(...this.middleware);
-
-//         const wrapHandler = (req: DNSRequest, res: DNSResponse) => {
-//             let index = 0;
-//             const next = () => {
-//                 if (index < handlerChain.length) {
-//                     handlerChain[index++](req, res, next);
-//                 }
-//             };
-//             next();
-//         };
-
-//         res.on('finish', () => {
-//             console.log("sending response");
-//             this.server.send(new Uint8Array(res.packet.encode()), req.connection.remotePort, req.connection.remoteAddress);
-//         });
-
-
-//         wrapHandler(req, res);
-//     }
-
-//     /**
-//      * Use a middleware for all requests.
-//      * @param handler The middleware to use
-//      */
-//     use(handler: DNSHandler) {
-//         this.middleware.push(handler);
-//     }
-
-//     /**
-//      * Start the server listening on a given port.
-//      * @param port The port to listen on
-//      */
-//     listen(port: number, cb?: Function) {
-//         this.server.bind(port);
-//         this.server.on('listening', () => {
-//             if (cb) {
-//                 cb();
-//             }
-//         });
-//     }
-// }
-
-// export function dnstap() {
-//     return (req: DNSRequest, res: DNSResponse, next: Function) => {
-//         console.log(`Request from ${req.connection.remoteAddress}`);
-//         next();
-//     };
-// }
+    resolveWildcard(domain: string) {
+        return domain.replace(/\*/g, '.*');
+    }
+}

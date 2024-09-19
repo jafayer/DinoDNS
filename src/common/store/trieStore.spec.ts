@@ -89,12 +89,24 @@ describe('AnswerTrie', () => {
 
     it('Should be able to resolve wildcard queries', () => {
         trie.add('*.example.com', 'A', records);
-        expect(trie.get('sub.example.com', 'A')).toEqual(records);
+        const subRecords = records.map((record) => {
+            return {
+                ...record,
+                name: 'sub.example.com'
+            }
+        });
+        expect(trie.get('sub.example.com', 'A')).toEqual(subRecords);
     });
 
     it('Should be able to resolve wildcard queries with multiple labels', () => {
         trie.add('*.example.com', 'A', records);
-        expect(trie.get('sub.sub.example.com', 'A')).toEqual(records);
+        const subRecords = records.map((record) => {
+            return {
+                ...record,
+                name: 'sub.sub.example.com'
+            }
+        });
+        expect(trie.get('sub.sub.example.com', 'A')).toEqual(subRecords);
     });
 
     it('Should be able to resolve the domain name from the trie', () => {
@@ -117,9 +129,24 @@ describe('AnswerTrie', () => {
         const serialized = trie.toString();
         const deserialized = AnswerTrie.fromString(serialized);
 
+        const subRecords = records.map((record) => {
+            return {
+                ...record,
+                name: 'foo.example.com'
+            }
+        })
+
+        const subSubRecords = records.map((record) => {
+            return {
+                ...record,
+                name: 'foo.bar.example.com'
+            }
+        });
+
+
         expect(deserialized.get('example.com', 'A')).toEqual(records);
-        expect(deserialized.get('*.example.com', 'A')).toEqual(records);
-        expect(deserialized.get('*.sub.example.com', 'A')).toEqual(records);
+        expect(deserialized.get('foo.example.com', 'A')).toEqual(subRecords);
+        expect(deserialized.get('foo.bar.example.com', 'A')).toEqual(subSubRecords);
     });
 
     it('Should emit a cacheRequest event whenever it successfully resolves a request', (done) => {

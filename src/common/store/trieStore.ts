@@ -59,12 +59,26 @@ export class AnswerTrie {
             return Array.from(this.data.values()).flat();
         }
         
-        const matchesWildcard = this.trie.has('*');
         if(this.trie.has('*')) {
             if(rType) {
-                return this.trie.get('*')!.data.get(rType) || null;
+                const response = this.trie.get('*')!.data.get(rType);
+                if(!response) {
+                    return null;
+                }
+                return response.map((record) => {
+                    return {
+                        ...record,
+                        name: labels.toReversed().join('.') + '.' + record.name.replace('*.', '')
+                    };
+                });
             }
-            return Array.from(this.trie.get('*')!.data.values()).flat();
+            const response = Array.from(this.trie.get('*')!.data.values()).flat();
+            return response.map((record) => {
+                return {
+                    ...record,
+                    name: labels.toReversed().join('.') + '.' + record.name.replace('*.', '')
+                };
+            });
         }
 
         const [label, ...rest] = labels;
