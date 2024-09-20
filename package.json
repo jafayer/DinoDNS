@@ -1,5 +1,5 @@
 {
-  "name": "ts-dns-server",
+  "name": "DinoDNS",
   "version": "1.0.0",
   "description": "A pure Typescript, low-configuration full DNS server",
   "main": "index.js",
