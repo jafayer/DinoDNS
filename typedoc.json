@@ -2,7 +2,7 @@
   "out": "docs",
   "exclude": ["**/node_modules/**", "**/*.spec.ts"],
   "theme": "default",
-  "excludePrivate": true,
+  "excludePrivate": false,
   "excludeProtected": true,
-  "excludeExternals": true
+  "excludeExternals": false,
 }
