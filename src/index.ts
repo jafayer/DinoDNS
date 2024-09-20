@@ -1,14 +1,19 @@
 import { ConsoleLogger } from "./common/logger";
 import { DNSServer } from "./server";
-import { DNSOverTCP, DNSOverUDP } from "./common/network";
+import { DNSOverTCP, DNSOverUDP, DNSOverHTTP } from "./common/network";
 import dnsPacket from 'dns-packet';
 import { Handler } from "./server";
-import { DNSRequest, DNSResponse, NextFunction } from "./server/types";
 import { TrieStore } from "./common/store";
 
-const logger = new ConsoleLogger(false, true);
+export { DNSOverTCP, DNSOverUDP, DNSOverHTTP } from './common/network';
+export { ConsoleLogger, Logger } from './common/logger';
+export { DNSServer, DNSRequest, DNSResponse, Handler, NextFunction } from './server';
+export { TrieStore, Store } from './common/store';
+export { DefaultRouter, Router } from './common/router';
+
+const logger = new ConsoleLogger(true, true);
 const s = new DNSServer({
-  networks: [new DNSOverTCP('0.0.0.0', 1053), new DNSOverUDP('0.0.0.0', 1053)],
+  networks: [new DNSOverTCP('0.0.0.0', 1053), new DNSOverUDP('0.0.0.0', 1053), new DNSOverHTTP('0.0.0.0', 1083)],
   cache: {},
   logger: logger.handle.bind(logger),
 });

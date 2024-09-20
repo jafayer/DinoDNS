@@ -22,6 +22,15 @@ type DNSServerProps = {
     router?: Router
 }
 
+/**
+ * DNSServer is the main server class.
+ * 
+ * It is responsible for handling incoming DNS requests
+ * and routing them to the appropriate handler(s).
+ * 
+ * DNSServer is extensible and can be configured with
+ * custom middlewares, handlers, routers, loggers, networks, and caches.
+ */
 export class DNSServer implements Server {
     public networks: Network<any, any>[] = [];
     public cache: any = {};
