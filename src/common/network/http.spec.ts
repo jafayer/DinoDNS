@@ -35,7 +35,7 @@ describe("DNSOverHTTP Integration Tests", () => {
             return new DNSResponse(packet, conn)
         };
 
-        const query = dnsPacket.streamEncode({
+        const query = dnsPacket.encode({
             type: "query",
             id: 1,
             flags: dnsPacket.RECURSION_DESIRED,
@@ -72,14 +72,14 @@ describe("DNSOverHTTP Integration Tests", () => {
 
         // Listen for response
         client.on("data", (data) => {
-            const packet = dnsPacket.streamDecode(data);
+            const packet = dnsPacket.decode(data);
             expect(packet.answers![0].name).toBe("google.com");
             expect((packet.answers![0] as StringAnswer).data).toBe("127.0.0.1");
             done();
         });
 
         // Send query
-        const query = dnsPacket.streamEncode({
+        const query = dnsPacket.encode({
             type: "query",
             id: 1,
             flags: dnsPacket.RECURSION_DESIRED,

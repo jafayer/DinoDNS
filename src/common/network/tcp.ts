@@ -55,7 +55,8 @@ export class DNSOverTCP implements Network<dnsPacket.Packet, net.Socket> {
         return {
             remoteAddress: socket.remoteAddress || "",
             remotePort: socket.remotePort || 0,
-            type: SupportedNetworkType.TCP
+            type: SupportedNetworkType.TCP,
+            ts: Date.now(),
         }
     }
 }

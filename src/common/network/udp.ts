@@ -56,7 +56,8 @@ export class DNSOverUDP implements Network<dnsPacket.Packet, dgram.RemoteInfo> {
         return {
             remoteAddress: rinfo.address,
             remotePort: rinfo.port,
-            type: SupportedNetworkType.UDP
+            type: SupportedNetworkType.UDP,
+            ts: Date.now(),
         }
     }
 }

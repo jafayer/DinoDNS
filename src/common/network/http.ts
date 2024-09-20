@@ -16,7 +16,6 @@ export class DNSOverHTTP implements Network<dnsPacket.Packet, http.ServerRespons
         this.serializer = new DNSPacketSerializer();
 
         this.server.on("request", (req, res) => {
-
             if(!this.handler) {
                 res.writeHead(501);
                 res.end();
@@ -39,15 +38,10 @@ export class DNSOverHTTP implements Network<dnsPacket.Packet, http.ServerRespons
                         const dnsParam = params.get("dns");
                         const type: RecordType | null = params.get("type") as RecordType | null;
                         const name = params.get("name");
-                        if (!dnsParam || !type || !name) {
-                            res.writeHead(400);
-                            res.end();
-                            return;
-                        }
 
                         if (dnsParam) {
-                            packet = dnsPacket.streamDecode(Buffer.from(dnsParam, "base64"));
-                        } else {
+                            packet = dnsPacket.decode(Buffer.from(dnsParam, "base64"));
+                        } else if (type && name) {
                             // we have to construct our own packet
                             const question: Question = {
                                 type,
@@ -62,6 +56,10 @@ export class DNSOverHTTP implements Network<dnsPacket.Packet, http.ServerRespons
                             }
 
                             packet = dnsPacket.streamDecode(this.serializer.encode(packet));
+                        } else {
+                            res.writeHead(400);
+                            res.end();
+                            return;
                         }
                         break;
                     // post request
@@ -74,7 +72,7 @@ export class DNSOverHTTP implements Network<dnsPacket.Packet, http.ServerRespons
                         return;
                 }
 
-                if(!handler) {
+                if(!this.handler) {
                     res.writeHead(501);
                     res.end();
                     return;
@@ -82,12 +80,13 @@ export class DNSOverHTTP implements Network<dnsPacket.Packet, http.ServerRespons
                 
                 // @ts-ignore
                 const response = await this.handler(packet, this.toConnection(res));
+                console.log(response.packet);
 
                 res.writeHead(200, {
                     "Content-Type": "application/dns-message",
                 });
 
-                res.end(dnsPacket.streamEncode(response.packet));
+                res.end(dnsPacket.encode(response.packet));
             });
         });
     }
@@ -122,7 +121,8 @@ export class DNSOverHTTP implements Network<dnsPacket.Packet, http.ServerRespons
         return {
             remoteAddress: res.socket?.remoteAddress || "",
             remotePort: res.socket?.remotePort || 0,
-            type: SupportedNetworkType.HTTP
+            type: SupportedNetworkType.HTTP,
+            ts: Date.now(),
         }
     }
 }

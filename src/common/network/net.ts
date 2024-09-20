@@ -5,7 +5,7 @@ export interface NetworkHandler<T> {
     (data: T, connection: Connection): Promise<DNSResponse>;
 }
 /**
- * Network defines the interaction layer beween the server and the network.
+ * Network defines the interaction layer between the server and the network.
  * It is responsible for parsing incoming requests and serializing outgoing responses.
  * 
  * The network interface is extensible to any network protocol, such as TCP, UDP, or HTTP.
@@ -41,4 +41,5 @@ export interface Connection {
     remoteAddress: string;
     remotePort: number;
     type: SupportedNetworkType;
+    ts: number;
 }
