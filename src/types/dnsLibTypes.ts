@@ -16,32 +16,32 @@ import type {
   SshfpData,
   DnskeyData,
   StringRecordType,
-  OtherRecordType
+  OtherRecordType,
 } from 'dns-packet';
 
 type ExtractDataType<T> = T extends BaseAnswer<any, infer D> ? D : never;
 type ExpandUnion<T> = T extends infer U ? U : never;
 
 export type ZoneData = {
-    [T in StringRecordType]: string;
+  [T in StringRecordType]: string;
 } & {
-    [T in Exclude<OtherRecordType, StringRecordType>]: Buffer;
+  [T in Exclude<OtherRecordType, StringRecordType>]: Buffer;
 } & {
-    CAA: CaaData;
-    DNSKEY: DnskeyData;
-    DS: DsData;
-    HINFO: HInfoData;
-    MX: MxData;
-    NAPTR: NaptrData;
-    NSEC3: Nsec3Data;
-    NSEC: NsecData;
-    RP: RpData;
-    RRSIG: RrsigData;
-    SOA: SoaData;
-    SRV: SrvData;
-    SSHFP: SshfpData;
-    TLSA: TlsaData;
-    TXT: TxtData;
+  CAA: CaaData;
+  DNSKEY: DnskeyData;
+  DS: DsData;
+  HINFO: HInfoData;
+  MX: MxData;
+  NAPTR: NaptrData;
+  NSEC3: Nsec3Data;
+  NSEC: NsecData;
+  RP: RpData;
+  RRSIG: RrsigData;
+  SOA: SoaData;
+  SRV: SrvData;
+  SSHFP: SshfpData;
+  TLSA: TlsaData;
+  TXT: TxtData;
 };
 
 export type AnswerMap = {

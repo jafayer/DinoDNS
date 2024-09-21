@@ -17,6 +17,6 @@ server.use(dnstap());
 
 // creates a handler
 server.handle('*.example.com', (req, res) => {
-    res.answer('1270.0.1');
+  res.answer('1270.0.1');
 });
 ```

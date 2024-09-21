@@ -1,2 +1,2 @@
-export {Store} from './Store';
-export {TrieStore} from './trieStore';
+export { Store } from './Store';
+export { TrieStore } from './trieStore';

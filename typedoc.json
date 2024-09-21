@@ -4,5 +4,5 @@
   "theme": "default",
   "excludePrivate": false,
   "excludeProtected": true,
-  "excludeExternals": false,
+  "excludeExternals": false
 }
