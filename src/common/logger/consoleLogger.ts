@@ -8,16 +8,22 @@ export class ConsoleLogger implements Logger {
     private logResponses: boolean = true,
   ) {}
 
+  register(res: DNSResponse): void {
+    res.once('done', () => {
+      if (res.packet.answers!.length > 0) {
+        console.log(`[ANSWER] ${res.packet.answers![0].name} ${res.packet.answers![0].type} ${JSON.stringify((res.packet.answers![0] as dnsPacket.StringAnswer).data)} (took ${Date.now() - res.connection.ts}ms)`);
+      }
+    });
+  }
   handle(req: DNSRequest, res: DNSResponse, next: Function): void {
     if (this.logRequests) {
       console.log(
         `[QUESTION] ${req.packet.questions![0].name} ${req.packet.questions![0].type} ${req.connection.remoteAddress}`,
       );
     }
-    if (this.logResponses && res.packet.answers!.length > 0) {
-      console.log(
-        `[ANSWER] ${res.packet.answers![0].name} ${res.packet.answers![0].type} ${JSON.stringify((res.packet.answers![0] as dnsPacket.StringAnswer).data)} (took ${Date.now() - req.connection.ts}ms)`,
-      );
+    
+    if (this.logResponses) {
+      this.register(res);
     }
 
     next();
