@@ -1,7 +1,6 @@
-import { Router, MatchedHandlers } from './router';
-import { HandlerMatch } from '../core/domainToRegexp';
-import { domainToRegexp } from '../core/domainToRegexp';
-import { Handler } from '../../server';
+import { Router, MatchedHandlers } from "./router";
+import { domainToRegexp } from "../core/domainToRegexp";
+import { Handler } from "../../server";
 
 export class DefaultRouter implements Router {
   private handlers: MatchedHandlers[] = [];
@@ -38,18 +37,23 @@ export class DefaultRouter implements Router {
     return this.wrapHandlers([...this.middleware, ...handlers]);
   }
 
-  private wrapHandlers(handlers: Handler[]): Handler {
-    return (req, res) => {
-      let i = 0;
-
-      const nextHandler = () => {
-        if (i >= handlers.length) {
-          return;
+    private wrapHandlers(handlers: Handler[]): Handler {
+        return (req, res, next) => {
+            let i = 0;
+          
+            const nextHandler = (err?: Error) => {
+                if(i >= handlers.length) {
+                    return next(err);
+                }
+                const handler = handlers[i++];
+                try {
+                    handler(req, res, nextHandler);
+                } catch(e: any) {
+                    nextHandler(err || e);
+                }
+            };
+            
+            nextHandler();
         }
-        const handler = handlers[i++];
-        handler(req, res, nextHandler);
-      };
-      nextHandler();
-    };
-  }
+    }
 }
