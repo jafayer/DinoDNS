@@ -1,21 +1,31 @@
-import { Network, NetworkHandler, SupportedNetworkType, Connection } from './net';
-import { Serializer, DNSPacketSerializer } from '../dns';
-import dgram from 'dgram';
-import dnsPacket from 'dns-packet';
-import { RCode, CombineFlags } from '../core/utils';
+import { Network, NetworkHandler, SupportedNetworkType, Connection } from "./net";
+import { Serializer } from "../dns";
+import dgram from "dgram";
+import dnsPacket from "dns-packet";
+import { RCode, CombineFlags } from "../core/utils";
 
+export class UDPSerializer implements Serializer<dnsPacket.Packet> {
+    encode(packet: dnsPacket.Packet): Buffer {
+        return dnsPacket.encode(packet)
+    }
+
+    decode(buffer: Buffer): dnsPacket.Packet {
+        return dnsPacket.decode(buffer);
+    }
+}
+
+/**
+ * Serializer for the UDP protocol. The `dns-packet` module's
+ * `decode` and `encode` methods are passed directly through here.
+ */
 export class DNSOverUDP implements Network<dnsPacket.Packet, dgram.RemoteInfo> {
   private server: dgram.Socket;
   public serializer: Serializer<dnsPacket.Packet>;
   public networkType: SupportedNetworkType = SupportedNetworkType.UDP;
 
-  constructor(
-    public address: string,
-    public port: number,
-    public handler?: NetworkHandler<dnsPacket.Packet>,
-  ) {
-    this.server = dgram.createSocket('udp4');
-    this.serializer = new DNSPacketSerializer();
+    constructor(public address: string, public port: number, public handler?: NetworkHandler<dnsPacket.Packet>) {
+        this.server = dgram.createSocket("udp4");
+        this.serializer = new UDPSerializer();
 
     this.server.on('message', async (msg, rinfo) => {
       if (!this.handler) {
