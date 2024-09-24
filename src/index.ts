@@ -2,8 +2,13 @@ import { ConsoleLogger } from './common/logger';
 import { DNSServer } from './server';
 import { DNSOverTCP, DNSOverUDP, DNSOverHTTP } from './common/network';
 import dnsPacket from 'dns-packet';
-import { Handler } from './server';
-import { TrieStore } from './common/store';
+import { Handler } from "./server";
+import { TrieStore } from "./common/store";
+
+export * as network from './common/network';
+export * as logging from './common/logger';
+export * as server from './server';
+export * as store from './common/store';
 
 export { DNSOverTCP, DNSOverUDP, DNSOverHTTP } from './common/network';
 export { ConsoleLogger, Logger } from './common/logger';
@@ -13,9 +18,12 @@ export { DefaultRouter, Router } from './common/router';
 
 const logger = new ConsoleLogger(true, true);
 const s = new DNSServer({
-  networks: [new DNSOverTCP('0.0.0.0', 1053), new DNSOverUDP('0.0.0.0', 1053), new DNSOverHTTP('0.0.0.0', 1083)],
+  networks: [new DNSOverTCP('localhost', 1053), new DNSOverUDP('localhost', 1053), new DNSOverHTTP('localhost', 1083)],
   cache: {},
-  logger: logger.handle.bind(logger),
+  defaultHandler: (req, res) => {
+    res.errors.nxDomain();
+  }
+//   logger: logger.handle.bind(logger),
 });
 
 const store = new TrieStore();
@@ -38,6 +46,14 @@ store.set('example.com', 'MX', {
   },
 });
 
+store.set('example.net', 'A', {
+    name: 'example.com',
+    type: 'A',
+    class: 'IN',
+    ttl: 300,
+    data: "127.0.0.1"
+});
+
 store.set('*.example.com', 'A', {
   name: '*.example.com',
   type: 'A',
@@ -45,11 +61,6 @@ store.set('*.example.com', 'A', {
   ttl: 300,
   data: '127.0.0.2',
 });
-
-console.log(store.trie.resolve('example.com'));
-console.log(store.trie.resolve('test.example.com'));
-console.log(store.get('test.example.com', 'A'));
-console.log(store.get('example.com', 'A'));
 
 const block: (list: string[]) => Handler = (blockList: string[]): Handler => {
   return async (req, res, next) => {
@@ -78,12 +89,14 @@ const forward: Handler = async (req, res, next) => {
       return res.answer(responsePacket.answers);
     }
 
-    return next();
-  } catch (e) {
-    console.error(e);
-    return next(e);
-  }
-};
+        return next();
+    } catch (e) {
+        console.error(e);
+        return next(e);
+    }
+}
+
+s.use(logger.handle.bind(logger));
 
 s.use(block(['example.dev']));
 s.use(store.handler);

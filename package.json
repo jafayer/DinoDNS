@@ -1,8 +1,15 @@
 {
-  "name": "DinoDNS",
+  "name": "dinodns",
   "version": "1.0.0",
   "description": "A pure Typescript, low-configuration full DNS server",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jafayer/DinoDNS"
+  },
+  "keywords": ["dns", "server", "typescript"],
+  "author": "Josh Fayer <contact@fayer.me>",
   "scripts": {
     "build": "rollup -c",
     "build:prod": "rollup -c && NODE_ENV=production rollup -c",
@@ -18,8 +25,6 @@
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
-  "keywords": [],
-  "author": "",
   "license": "ISC",
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.7",

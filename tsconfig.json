@@ -7,7 +7,10 @@
     "strict": true, // Optional: Enables strict type checking
     "moduleResolution": "node", // Resolves modules using Node.js resolution algorithm
     "resolveJsonModule": true, // Allows importing JSON files as modules
-    "lib": ["ESNext"] // Specifies the libraries to be included in the compilation,
+    "lib": ["ESNext"], // Specifies the libraries to be included in the compilation
+    "declaration": true, // Generates corresponding .d.ts files
+    "outDir": "./dist", // Redirect output structure to the directory
+    "declarationDir": "./dist", // Output directory for .d.ts files
   },
   "include": ["src/**/*.ts", "tests/**/*.ts"], // Include your TypeScript source files
   "exclude": ["node_modules"] // Exclude node_modules directory

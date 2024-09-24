@@ -5,13 +5,14 @@ import terser from '@rollup/plugin-terser';
 export default {
   input: 'src/index.ts',
   output: {
-    file: 'dist/bundle.js',
+    dir: "dist",
     format: 'cjs',
     sourcemap: true,
   },
   plugins: [
-    typescript(),
+    typescript({ declaration: true, outDir: 'dist', rootDir: 'src' }),
     commonjs(),
     terser(), // Minifies the bundle
   ],
+  preserveModules: true,
 };
