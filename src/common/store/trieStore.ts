@@ -48,36 +48,36 @@ export class AnswerTrie {
     this._insert(this.domainToLabels(domain), rType, data);
   }
 
-  private _get(labels: string[], rType?: RecordType): Answer[] | null {
-    if (labels.length === 0) {
-      if (rType) {
-        return this.data.get(rType) || null;
-      }
-
-      return Array.from(this.data.values()).flat();
-    }
-
-    if (this.trie.has('*')) {
-      if (rType) {
-        const response = this.trie.get('*')!.data.get(rType);
-        if (!response) {
-          return null;
+    private _get(labels: string[], rType?: RecordType): Answer[] | null {
+        if(labels.length === 0) {
+            if(rType) {
+                return this.data.get(rType) || null;
+            }
+            
+            return Array.from(this.data.values()).flat();
         }
-        return response.map((record) => {
-          return {
-            ...record,
-            name: labels.toReversed().join('.') + '.' + record.name.replace('*.', ''),
-          };
-        });
-      }
-      const response = Array.from(this.trie.get('*')!.data.values()).flat();
-      return response.map((record) => {
-        return {
-          ...record,
-          name: labels.toReversed().join('.') + '.' + record.name.replace('*.', ''),
-        };
-      });
-    }
+        
+        if(this.trie.has('*')) {
+            if(rType) {
+                const response = this.trie.get('*')!.data.get(rType);
+                if(!response) {
+                    return null;
+                }
+                return response.map((record) => {
+                    return {
+                        ...record,
+                        name: labels.toReversed().join('.') + record.name.replace('*', '')
+                    };
+                });
+            }
+            const response = Array.from(this.trie.get('*')!.data.values()).flat();
+            return response.map((record) => {
+                return {
+                    ...record,
+                    name: labels.toReversed().join('.') + '.' + record.name.replace('*.', '')
+                };
+            });
+        }
 
     const [label, ...rest] = labels;
     const next = this.trie.get(label);
@@ -277,12 +277,12 @@ export class TrieStore extends EventEmitter implements Store {
     if (records && records.length > 0) {
       res.answer(records);
 
-      this.emit('cacheRequest', {
-        zoneName: this.trie.resolve(name),
-        recordType: type,
-        records: records,
-      });
-    }
+            // this.emit('cacheRequest', {
+            //     zoneName: this.trie.resolve(name),
+            //     recordType: type,
+            //     records: records
+            // });
+        }
 
     next();
   };
