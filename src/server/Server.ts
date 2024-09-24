@@ -1,26 +1,34 @@
-import { DNSRequest, DNSResponse } from './types';
-import { Network } from '../common/network';
-import { Handler } from './types';
-import { DefaultRouter, Router } from '../common/router';
+import { DNSRequest, DNSResponse, NextFunction } from "./types";
+import { Network } from "../common/network";
+import { Handler } from "./types";
+import { DefaultRouter, Router } from "../common/router";
 
 export interface Server {
   networks: Network<any, any>[];
   cache?: any;
 
-  default(req: DNSRequest, res: DNSResponse): void;
+    default(req: DNSRequest, res: DNSResponse, next: NextFunction): void;
 
-  handle(domain: string, handler: Handler): void;
+    handle(domain: string, handler: Handler): void;
+    use(handler: Handler): void;
 
   start(callback: Function): void;
   stop(): void;
 }
 
+
 type DNSServerProps = {
-  networks: Network<any, any>[];
-  cache: any;
-  logger?: Handler;
-  router?: Router;
-};
+    /** Defines one or more network interfaces for the DNS Server */
+    networks: Network<any, any>[];
+    cache: any;
+    logger?: Handler;
+    
+    /** Defines the router used by the DNS Server to resolve qnames to a handler chain */
+    router?: Router
+
+    /** The default handler used if no handler answers the query. Default behavior is NXDOMAIN response. */
+    defaultHandler?: Handler;
+}
 
 /**
  * DNSServer is the main server class.
@@ -37,11 +45,15 @@ export class DNSServer implements Server {
   private logger?: Handler;
   private router: Router;
 
-  constructor(props: DNSServerProps) {
-    this.networks = props.networks;
-    this.cache = props.cache;
-    this.logger = props.logger;
-    this.router = props.router || new DefaultRouter();
+    constructor(props: DNSServerProps) {
+        this.networks = props.networks;
+        this.cache = props.cache;
+        this.logger = props.logger;
+        this.router = props.router || new DefaultRouter();
+
+        if(props.defaultHandler) {
+            this.default = props.defaultHandler;
+        }
 
     for (const network of this.networks) {
       network.handler = async (packet, connection) => {
@@ -62,41 +74,56 @@ export class DNSServer implements Server {
     }
   }
 
-  use(handler: Handler) {
-    this.router.use(handler);
-  }
-
-  /**
-   * HandleQueries is the main route handler. It first connects all middleware functions,
-   * and any functions that match the domain name in the request to a chain of handlers.
-   *
-   * It does so by creating a function that calls each middleware with the next middleware
-   * set as the current middleware's next function. This allows each middleware to call the
-   * next middleware in the chain.
-   *
-   * It then creates a chain of handlers that match the domain name in the request. Finally,
-   * it connects the middleware chain to the handler chain by setting the last middleware's
-   * next function to the first handler in the handler chain.
-   *
-   * If no handlers match the domain name in the request, the default handler is called.
-   *
-   * @param req
-   * @param res
-   * @returns
-   */
-  handleQueries(req: DNSRequest, res: DNSResponse): void {
-    const name = req.packet.questions?.[0]?.name;
-    if (!name) {
-      return res.errors.refused();
+    use(handler: Handler) {
+        this.router.use(handler);
     }
-    const handlers = this.router.match(name);
-    return handlers(req, res, () => {});
-  }
+    
+    /**
+     * HandleQueries is the main route handler. It first connects all middleware functions,
+     * and any functions that match the domain name in the request to a chain of handlers.
+     * 
+     * It does so by creating a function that calls each middleware with the next middleware
+     * set as the current middleware's next function. This allows each middleware to call the
+     * next middleware in the chain.
+     * 
+     * It then creates a chain of handlers that match the domain name in the request. Finally,
+     * it connects the middleware chain to the handler chain by setting the last middleware's
+     * next function to the first handler in the handler chain.
+     * 
+     * If no handlers match the domain name in the request, the default handler is called.
+     * 
+     * @param req 
+     * @param res 
+     * @returns 
+     */
+    handleQueries(req: DNSRequest, res: DNSResponse): void {
+        const name = req.packet.questions?.[0]?.name;
+        if(!name) {
+            return res.errors.refused();
+        }
+        const handlers = this.router.match(name);
+        
+        handlers(req, res, (err) => {
 
-  default(req: DNSRequest, res: DNSResponse): void {
-    // to be implemented
-    res.errors.notImplemented();
-  }
+            if(err) {
+                console.error(err);
+            }
+
+            if(!res.finished) {
+                this.default(req, res, (err) => {
+                    if(err) {
+                        console.error(err);
+                    }
+                });
+            }
+        });
+    }
+
+    default(req: DNSRequest, res: DNSResponse, next: NextFunction): void {
+        res.errors.nxDomain();
+
+        next(); // typically used for error handling
+    }
 
   handle(domain: string, handler: Handler): void {
     this.router.handle(domain, handler);
