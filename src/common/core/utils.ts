@@ -33,5 +33,21 @@ export function CombineFlags(flags: number[]): number {
  * @returns
  */
 export function HasFlag(flags: number, flag: number): boolean {
-  return (flags & flag) === flag;
+    return (flags & flag) === flag;
+}
+
+export function getPacketFlags(buffer: Buffer): number {
+    return buffer.readUInt16BE(2);
+}
+
+export function overrideId(buffer: Buffer, id: number): Buffer {
+    const bufferCopy = Buffer.from(buffer);
+    bufferCopy.writeUint16BE(id, 0);
+    return bufferCopy;
+}
+
+export function overrideFlags(buffer: Buffer, flags: number): Buffer {
+    const bufferCopy = Buffer.from(buffer);
+    bufferCopy.writeUInt16BE(flags, 2);
+    return bufferCopy;
 }
