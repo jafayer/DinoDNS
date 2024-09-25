@@ -20,8 +20,6 @@ export interface Server {
 type DNSServerProps = {
     /** Defines one or more network interfaces for the DNS Server */
     networks: Network<any, any>[];
-    cache: any;
-    logger?: Handler;
     
     /** Defines the router used by the DNS Server to resolve qnames to a handler chain */
     router?: Router
@@ -47,8 +45,6 @@ export class DNSServer implements Server {
 
     constructor(props: DNSServerProps) {
         this.networks = props.networks;
-        this.cache = props.cache;
-        this.logger = props.logger;
         this.router = props.router || new DefaultRouter();
 
         if(props.defaultHandler) {

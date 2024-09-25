@@ -1,6 +1,6 @@
 import { ConsoleLogger } from './common/logger';
 import { DNSServer } from './server';
-import { DNSOverTCP, DNSOverUDP, DNSOverHTTP } from './common/network';
+import { DNSOverTCP, DNSOverUDP } from './common/network';
 import dnsPacket from 'dns-packet';
 import { Handler } from "./server";
 import { TrieStore } from "./common/store";
@@ -10,7 +10,7 @@ export * as logging from './common/logger';
 export * as server from './server';
 export * as store from './common/store';
 
-export { DNSOverTCP, DNSOverUDP, DNSOverHTTP } from './common/network';
+export { DNSOverTCP, DNSOverUDP, Connection, Network, NetworkHandler, SupportedNetworkType, TCPSerializer, UDPSerializer } from './common/network';
 export { ConsoleLogger, Logger } from './common/logger';
 export { DNSServer, DNSRequest, DNSResponse, Handler, NextFunction } from './server';
 export { TrieStore, Store } from './common/store';
@@ -18,12 +18,10 @@ export { DefaultRouter, Router } from './common/router';
 
 const logger = new ConsoleLogger(true, true);
 const s = new DNSServer({
-  networks: [new DNSOverTCP('localhost', 1053), new DNSOverUDP('localhost', 1053), new DNSOverHTTP('localhost', 1083)],
-  cache: {},
+  networks: [new DNSOverTCP('localhost', 1053), new DNSOverUDP('localhost', 1053)],
   defaultHandler: (req, res) => {
     res.errors.nxDomain();
   }
-//   logger: logger.handle.bind(logger),
 });
 
 const store = new TrieStore();

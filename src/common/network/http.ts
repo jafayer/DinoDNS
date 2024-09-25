@@ -3,7 +3,6 @@ import http from "http";
 import { Serializer } from "../dns";
 import dnsPacket from "dns-packet";
 import type { Question, RecordType } from "dns-packet";
-import { DNSResponse } from "../../server";
 import { Connection } from "./net";
 
 
