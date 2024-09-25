@@ -6,9 +6,13 @@
   "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jafayer/DinoDNS"
+    "url": "git+https://github.com/jafayer/DinoDNS.git"
   },
-  "keywords": ["dns", "server", "typescript"],
+  "keywords": [
+    "dns",
+    "server",
+    "typescript"
+  ],
   "author": "Josh Fayer <contact@fayer.me>",
   "scripts": {
     "build": "rollup -c",
