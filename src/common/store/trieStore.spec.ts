@@ -1,7 +1,5 @@
-import { AnswerTrie, TrieStore } from './trieStore';
-import { DNSRequest } from '../../server';
-import { Answer, Packet } from 'dns-packet';
-import { Connection } from '../network';
+import { AnswerTrie } from './trieStore';
+import { Answer } from 'dns-packet';
 
 const records: Answer[] = [
   {
