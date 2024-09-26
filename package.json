@@ -1,10 +1,12 @@
 {
   "name": "dinodns",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A pure Typescript, low-configuration full DNS server",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jafayer/DinoDNS.git"
