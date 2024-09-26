@@ -11,6 +11,10 @@
     "type": "git",
     "url": "git+https://github.com/jafayer/DinoDNS.git"
   },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "keywords": [
     "dns",
     "server",
@@ -19,7 +23,8 @@
   "author": "Josh Fayer <contact@fayer.me>",
   "scripts": {
     "build": "rollup -c",
-    "build:prod": "rollup -c && NODE_ENV=production rollup -c",
+    "build:clean": "rm -rf dist",
+    "build:prod": "npm run build:clean && rollup -c && NODE_ENV=production rollup -c",
     "dev": "nodemon",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -30,7 +35,10 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "prepublishOnly": "npm run build:prod",
+    "postpublish": "git push --follow-tags",
+    "publish": "npm publish"
   },
   "license": "ISC",
   "devDependencies": {
