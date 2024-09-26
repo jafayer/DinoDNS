@@ -147,11 +147,10 @@ describe('AnswerTrie', () => {
     expect(deserialized.get('foo.bar.example.com', 'A')).toEqual(subSubRecords);
   });
 
-
   // THIS TEST IS DEPRECATED FOR NOW
   // We've commented out the explicit cacheRequest behavior in the TriesStore class for now, but
   // it probably will come back at some point
-  
+
   // it('Should emit a cacheRequest event whenever it successfully resolves a request', (done) => {
   //   const store = new TrieStore();
   //   store.set('example.com', 'A', records);
