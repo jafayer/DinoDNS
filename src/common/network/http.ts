@@ -1,23 +1,22 @@
-import { Network, NetworkHandler, SupportedNetworkType } from "./net";
-import http from "http";
-import { Serializer } from "../dns";
-import dnsPacket from "dns-packet";
-import type { Question, RecordType } from "dns-packet";
-import { Connection } from "./net";
-
+import { Network, NetworkHandler, SupportedNetworkType } from './net';
+import http from 'http';
+import { Serializer } from '../dns';
+import dnsPacket from 'dns-packet';
+import type { Question, RecordType } from 'dns-packet';
+import { Connection } from './net';
 
 /**
  * Default serializer for the HTTP protocol. The `dns-packet` module's
  * `decode` and `encode` methods are passed directly through here.
  */
 export class HTTPSerializer implements Serializer<dnsPacket.Packet> {
-    decode(buffer: Buffer): dnsPacket.Packet {
-        return dnsPacket.decode(buffer);
-    }
+  decode(buffer: Buffer): dnsPacket.Packet {
+    return dnsPacket.decode(buffer);
+  }
 
-    encode(packet: dnsPacket.Packet): Buffer {
-        return dnsPacket.encode(packet);
-    }
+  encode(packet: dnsPacket.Packet): Buffer {
+    return dnsPacket.encode(packet);
+  }
 }
 
 export class DNSOverHTTP implements Network<dnsPacket.Packet, http.ServerResponse> {
@@ -25,9 +24,13 @@ export class DNSOverHTTP implements Network<dnsPacket.Packet, http.ServerRespons
   private server: http.Server;
   public networkType: SupportedNetworkType = SupportedNetworkType.HTTP;
 
-    constructor(public address: string, public port: number, public handler?: NetworkHandler<dnsPacket.Packet>) {
-        this.server = http.createServer();
-        this.serializer = new HTTPSerializer();
+  constructor(
+    public address: string,
+    public port: number,
+    public handler?: NetworkHandler<dnsPacket.Packet>,
+  ) {
+    this.server = http.createServer();
+    this.serializer = new HTTPSerializer();
 
     this.server.on('request', (req, res) => {
       if (!this.handler) {
@@ -86,13 +89,13 @@ export class DNSOverHTTP implements Network<dnsPacket.Packet, http.ServerRespons
             return;
         }
 
-                if(!this.handler) {
-                    res.writeHead(501);
-                    res.end();
-                    return;
-                }
-                
-                const response = await this.handler(packet, this.toConnection(res));
+        if (!this.handler) {
+          res.writeHead(501);
+          res.end();
+          return;
+        }
+
+        const response = await this.handler(packet, this.toConnection(res));
 
         res.writeHead(200, {
           'Content-Type': 'application/dns-message',

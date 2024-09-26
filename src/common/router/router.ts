@@ -1,9 +1,9 @@
-import { HandlerMatch } from "../core/domainToRegexp";
-import { Handler } from "../../server";
+import { HandlerMatch } from '../core/domainToRegexp';
+import { Handler } from '../../server';
 
 /**
  * A helper object interface used to resolve domain matches to handlers defined at their location.
- * 
+ *
  * Note that the handlers here may define only a subset of the overall handlers
  * applied to any given qname (for example, if a qname matches one or more wildcard queries).
  */

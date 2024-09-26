@@ -2,15 +2,24 @@ import { ConsoleLogger } from './common/logger';
 import { DNSServer } from './server';
 import { DNSOverTCP, DNSOverUDP } from './common/network';
 import dnsPacket from 'dns-packet';
-import { Handler } from "./server";
-import { TrieStore } from "./common/store";
+import { Handler } from './server';
+import { TrieStore } from './common/store';
 
 export * as network from './common/network';
 export * as logging from './common/logger';
 export * as server from './server';
 export * as store from './common/store';
 
-export { DNSOverTCP, DNSOverUDP, Connection, Network, NetworkHandler, SupportedNetworkType, TCPSerializer, UDPSerializer } from './common/network';
+export {
+  DNSOverTCP,
+  DNSOverUDP,
+  Connection,
+  Network,
+  NetworkHandler,
+  SupportedNetworkType,
+  TCPSerializer,
+  UDPSerializer,
+} from './common/network';
 export { ConsoleLogger, Logger } from './common/logger';
 export { DNSServer, DNSRequest, DNSResponse, Handler, NextFunction } from './server';
 export { TrieStore, Store } from './common/store';
@@ -21,7 +30,7 @@ const s = new DNSServer({
   networks: [new DNSOverTCP('localhost', 1053), new DNSOverUDP('localhost', 1053)],
   defaultHandler: (req, res) => {
     res.errors.nxDomain();
-  }
+  },
 });
 
 const store = new TrieStore();
@@ -45,11 +54,11 @@ store.set('example.com', 'MX', {
 });
 
 store.set('example.net', 'A', {
-    name: 'example.com',
-    type: 'A',
-    class: 'IN',
-    ttl: 300,
-    data: "127.0.0.1"
+  name: 'example.com',
+  type: 'A',
+  class: 'IN',
+  ttl: 300,
+  data: '127.0.0.1',
 });
 
 store.set('*.example.com', 'A', {
@@ -87,12 +96,12 @@ const forward: Handler = async (req, res, next) => {
       return res.answer(responsePacket.answers);
     }
 
-        return next();
-    } catch (e) {
-        console.error(e);
-        return next(e);
-    }
-}
+    return next();
+  } catch (e) {
+    console.error(e);
+    return next(e);
+  }
+};
 
 s.use(logger.handle.bind(logger));
 
