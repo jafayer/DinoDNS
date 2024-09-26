@@ -171,7 +171,7 @@ export class AnswerTrie {
     }
 
     if (rest.length === 0) {
-      let current = next.data.get(rType) || [];
+      const current = next.data.get(rType) || [];
       next.data.set(rType, current.concat(data));
     } else {
       next.append(rest.join('.'), rType, data);

@@ -1,7 +1,6 @@
 import net from 'net';
 import dnsPacket from 'dns-packet';
 import { DNSOverTCP } from './tcp';
-import { NetworkHandler } from './net';
 import type { StringAnswer } from 'dns-packet';
 import { DNSRequest, DNSResponse } from '../../server';
 

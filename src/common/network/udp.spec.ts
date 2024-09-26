@@ -2,7 +2,7 @@ import dgram from 'dgram';
 import dnsPacket from 'dns-packet';
 import { DNSOverUDP } from './udp';
 import type { StringAnswer } from 'dns-packet';
-import { DNSResponse, DNSRequest } from '../../server';
+import { DNSRequest } from '../../server';
 
 describe('DNSOverTCP Integration Tests', () => {
   let server: DNSOverUDP;

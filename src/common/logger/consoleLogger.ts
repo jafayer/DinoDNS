@@ -1,5 +1,5 @@
 import { Logger, LogLevel } from './logger';
-import { DNSRequest, DNSResponse } from '../../server';
+import { DNSRequest, DNSResponse, NextFunction } from '../../server';
 import dnsPacket from 'dns-packet';
 
 export class ConsoleLogger implements Logger {
@@ -17,7 +17,7 @@ export class ConsoleLogger implements Logger {
       }
     });
   }
-  handle(req: DNSRequest, res: DNSResponse, next: Function): void {
+  handler(req: DNSRequest, res: DNSResponse, next: NextFunction): void {
     if (this.logRequests) {
       console.log(
         `[QUESTION] ${req.packet.questions![0].name} ${req.packet.questions![0].type} ${req.connection.remoteAddress}`,

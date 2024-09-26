@@ -2,23 +2,23 @@ import { DNSRequest, DNSResponse, NextFunction } from './types';
 import { Network } from '../common/network';
 import { Handler } from './types';
 import { DefaultRouter, Router } from '../common/router';
+import dnsPacket from 'dns-packet';
 
-export interface Server {
-  networks: Network<any, any>[];
-  cache?: any;
+export interface Server<PacketType> {
+  networks: Network<PacketType>[];
 
   default(req: DNSRequest, res: DNSResponse, next: NextFunction): void;
 
   handle(domain: string, handler: Handler): void;
   use(handler: Handler): void;
 
-  start(callback: Function): void;
+  start(callback: () => void): void;
   stop(): void;
 }
 
-type DNSServerProps = {
+type DNSServerProps<PacketType> = {
   /** Defines one or more network interfaces for the DNS Server */
-  networks: Network<any, any>[];
+  networks: Network<PacketType>[];
 
   /** Defines the router used by the DNS Server to resolve qnames to a handler chain */
   router?: Router;
@@ -36,13 +36,11 @@ type DNSServerProps = {
  * DNSServer is extensible and can be configured with
  * custom middlewares, handlers, routers, loggers, networks, and caches.
  */
-export class DNSServer implements Server {
-  public networks: Network<any, any>[] = [];
-  public cache: any = {};
-  private logger?: Handler;
+export class DNSServer implements Server<dnsPacket.Packet> {
+  public networks: Network<dnsPacket.Packet>[] = [];
   private router: Router;
 
-  constructor(props: DNSServerProps) {
+  constructor(props: DNSServerProps<dnsPacket.Packet>) {
     this.networks = props.networks;
     this.router = props.router || new DefaultRouter();
 
@@ -55,11 +53,8 @@ export class DNSServer implements Server {
         const req = new DNSRequest(packet, connection);
         const res: DNSResponse = req.toAnswer();
 
-        return await new Promise<DNSResponse>((resolve, reject) => {
-          res.once('done', (t) => {
-            if (this.logger) {
-              this.logger(req, res, () => {});
-            }
+        return await new Promise<DNSResponse>((resolve) => {
+          res.once('done', () => {
             resolve(res);
           });
 
@@ -123,7 +118,7 @@ export class DNSServer implements Server {
     this.router.handle(domain, handler);
   }
 
-  start(callback: Function): void {
+  start(callback: () => void): void {
     for (const network of this.networks) {
       network.listen(network.address, network.port, () => {
         console.log(`Listening over ${network.networkType} on ${network.address}:${network.port}`);

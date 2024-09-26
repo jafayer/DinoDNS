@@ -1,5 +1,5 @@
 import { AnswerTrie, TrieStore } from './trieStore';
-import { DNSRequest, DNSResponse, NextFunction } from '../../server';
+import { DNSRequest } from '../../server';
 import { Answer, Packet } from 'dns-packet';
 import { Connection } from '../network';
 

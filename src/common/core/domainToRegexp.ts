@@ -22,7 +22,6 @@ export type HandlerMatch = {
 export function domainToRegexp(domain: string): HandlerMatch {
   const parts = domain.split('/');
   const domainPattern = parts[0].replace(/\./g, '\\.');
-  const type = parts[1];
   let regexp = domainPattern.replace(/\*/g, '.*');
   regexp = `^${regexp}$`;
   return {

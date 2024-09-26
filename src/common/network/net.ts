@@ -12,7 +12,7 @@ export interface NetworkHandler<T> {
  *
  * Network should define basic methods to handle
  */
-export interface Network<T, C> {
+export interface Network<T> {
   address: string;
   port: number;
   networkType: SupportedNetworkType;

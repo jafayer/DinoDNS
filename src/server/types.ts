@@ -1,10 +1,11 @@
 import dnsPacket from 'dns-packet';
-import { SupportedNetworkType as ConnectionType, Connection } from '../common/network';
-import { CanAnswer, Serializer } from '../common/dns';
+import { Connection } from '../common/network';
+import { CanAnswer } from '../common/dns';
 import { CombineFlags, RCode } from '../common/core/utils';
 import { EventEmitter } from 'events';
 
 export interface NextFunction {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (err?: any): void;
 }
 
@@ -42,6 +43,7 @@ export class DNSResponse extends EventEmitter {
 
   done(): void {
     const handler = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       set: (target: any, property: string | symbol, value: any) => {
         if (this.fin) {
           throw new ModifiedAfterSentError();

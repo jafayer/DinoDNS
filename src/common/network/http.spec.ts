@@ -1,6 +1,5 @@
 import { DNSOverHTTP } from './http';
 import http from 'http';
-import { Serializer, DNSPacketSerializer } from '../dns';
 import dnsPacket from 'dns-packet';
 import type { StringAnswer } from 'dns-packet';
 import { DNSResponse } from '../../server';

@@ -1,4 +1,3 @@
-import type { BaseAnswer, Answer } from 'dns-packet';
 import type {
   DsData,
   MxData,
@@ -19,9 +18,11 @@ import type {
   OtherRecordType,
 } from 'dns-packet';
 
-type ExtractDataType<T> = T extends BaseAnswer<any, infer D> ? D : never;
-type ExpandUnion<T> = T extends infer U ? U : never;
-
+/**
+ * The dns-packet type definitions provide robust Answer and Type definitions, but do not provide
+ * Any means of expressing "Any kind of Data". This type definition is a union of all possible
+ * data types that can be returned in a DNS response.
+ */
 export type ZoneData = {
   [T in StringRecordType]: string;
 } & {
@@ -43,10 +44,3 @@ export type ZoneData = {
   TLSA: TlsaData;
   TXT: TxtData;
 };
-
-export type AnswerMap = {
-  [T in Answer as ExtractDataType<T> extends never ? never : T['type']]: BaseAnswer<T['type'], ExtractDataType<T>>;
-};
-
-type AllowedRecordTypes = ExpandUnion<keyof AnswerMap>;
-export type RecordAnswer<T extends AllowedRecordTypes> = AnswerMap[T];

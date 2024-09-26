@@ -41,15 +41,19 @@ export class DefaultRouter implements Router {
     return (req, res, next) => {
       let i = 0;
 
-      const nextHandler = (err?: Error) => {
+      const nextHandler = (err?: unknown) => {
         if (i >= handlers.length) {
           return next(err);
         }
         const handler = handlers[i++];
         try {
           handler(req, res, nextHandler);
-        } catch (e: any) {
-          nextHandler(err || e);
+        } catch (e: unknown) {
+          if (e instanceof Error) {
+            nextHandler(e);
+          } else {
+            nextHandler(new Error('Unknown error'));
+          }
         }
       };
 

@@ -19,7 +19,7 @@ export class HTTPSerializer implements Serializer<dnsPacket.Packet> {
   }
 }
 
-export class DNSOverHTTP implements Network<dnsPacket.Packet, http.ServerResponse> {
+export class DNSOverHTTP implements Network<dnsPacket.Packet> {
   serializer: Serializer<dnsPacket.Packet>;
   private server: http.Server;
   public networkType: SupportedNetworkType = SupportedNetworkType.HTTP;
@@ -48,7 +48,7 @@ export class DNSOverHTTP implements Network<dnsPacket.Packet, http.ServerRespons
         let packet: dnsPacket.Packet;
         switch (req.method) {
           // get request
-          case 'GET':
+          case 'GET': {
             // get dns query param
             const query = req.url?.split('?')[1];
             const params = new URLSearchParams(query || '');
@@ -79,14 +79,17 @@ export class DNSOverHTTP implements Network<dnsPacket.Packet, http.ServerRespons
               return;
             }
             break;
+          }
           // post request
-          case 'POST':
+          case 'POST': {
             packet = dnsPacket.streamDecode(Buffer.from(data, 'base64'));
             break;
-          default:
+          }
+          default: {
             res.writeHead(400);
             res.end();
             return;
+          }
         }
 
         if (!this.handler) {

@@ -17,7 +17,7 @@ export class TCPSerializer implements Serializer<dnsPacket.Packet> {
   }
 }
 
-export class DNSOverTCP implements Network<dnsPacket.Packet, net.Socket> {
+export class DNSOverTCP implements Network<dnsPacket.Packet> {
   private server: net.Server;
   public serializer: TCPSerializer;
   public networkType: SupportedNetworkType = SupportedNetworkType.TCP;

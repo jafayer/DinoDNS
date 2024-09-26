@@ -27,7 +27,7 @@
     "docs:build": "typedoc --out docs ./src",
     "docs:clean": "rm -rf docs",
     "docs:serve": "npx http-server docs -o",
-    "lint": "eslint . --ext .ts",
+    "lint": "eslint 'src/**/*.{js,ts}' --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

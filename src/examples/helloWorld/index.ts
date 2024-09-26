@@ -15,6 +15,7 @@ const s = new server.DNSServer({
   networks: [new network.DNSOverTCP('localhost', 1054), new network.DNSOverUDP('localhost', 1054)],
 });
 
+s.use(logger.handler.bind(logger));
 s.use(st.handler);
 
 s.start(() => {

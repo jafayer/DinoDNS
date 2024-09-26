@@ -18,7 +18,7 @@ export class UDPSerializer implements Serializer<dnsPacket.Packet> {
  * Serializer for the UDP protocol. The `dns-packet` module's
  * `decode` and `encode` methods are passed directly through here.
  */
-export class DNSOverUDP implements Network<dnsPacket.Packet, dgram.RemoteInfo> {
+export class DNSOverUDP implements Network<dnsPacket.Packet> {
   private server: dgram.Socket;
   public serializer: Serializer<dnsPacket.Packet>;
   public networkType: SupportedNetworkType = SupportedNetworkType.UDP;

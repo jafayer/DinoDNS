@@ -1,7 +1,6 @@
 import { ConsoleLogger } from './common/logger';
 import { DNSServer } from './server';
 import { DNSOverTCP, DNSOverUDP } from './common/network';
-import dnsPacket from 'dns-packet';
 import { Handler } from './server';
 import { TrieStore } from './common/store';
 
@@ -78,32 +77,32 @@ const block: (list: string[]) => Handler = (blockList: string[]): Handler => {
   };
 };
 
-const forward: Handler = async (req, res, next) => {
-  try {
-    const response = await fetch(
-      `https://cloudflare-dns.com/dns-query?dns=${dnsPacket.encode(req.packet).toString('base64')}`,
-      {
-        method: 'GET',
-        headers: {
-          Accept: 'application/dns-message',
-        },
-      },
-    );
-    // data as buffer
-    const data = Buffer.from(await response.arrayBuffer());
-    const responsePacket = dnsPacket.decode(data);
-    if (responsePacket.answers && responsePacket.answers.length > 0) {
-      return res.answer(responsePacket.answers);
-    }
+// const forward: Handler = async (req, res, next) => {
+//   try {
+//     const response = await fetch(
+//       `https://cloudflare-dns.com/dns-query?dns=${dnsPacket.encode(req.packet).toString('base64')}`,
+//       {
+//         method: 'GET',
+//         headers: {
+//           Accept: 'application/dns-message',
+//         },
+//       },
+//     );
+//     // data as buffer
+//     const data = Buffer.from(await response.arrayBuffer());
+//     const responsePacket = dnsPacket.decode(data);
+//     if (responsePacket.answers && responsePacket.answers.length > 0) {
+//       return res.answer(responsePacket.answers);
+//     }
 
-    return next();
-  } catch (e) {
-    console.error(e);
-    return next(e);
-  }
-};
+//     return next();
+//   } catch (e) {
+//     console.error(e);
+//     return next(e);
+//   }
+// };
 
-s.use(logger.handle.bind(logger));
+s.use(logger.handler.bind(logger));
 
 s.use(block(['example.dev']));
 s.use(store.handler);
@@ -112,7 +111,7 @@ s.use(store.handler);
 s.handle('example.net', (req, res) => {
   res.packet.answers?.push({
     type: 'SOA',
-    name: 'example.com',
+    name: 'example.net',
     data: {
       mname: 'ns1.example.com',
       rname: 'admin.example.com',
@@ -125,22 +124,22 @@ s.handle('example.net', (req, res) => {
   });
   res.packet.answers?.push({
     type: 'A',
-    name: 'example.com',
+    name: 'example.net',
     data: '127.0.0.1',
   });
   res.resolve();
 });
 
-s.handle('example.com', (req, res, next) => {
-  if (req.packet.questions![0].type === 'A') {
-    return res.answer({
-      type: 'A',
-      name: 'example.com',
-      data: '127.0.0.1',
-    });
-  }
-  next();
-});
+// s.handle('example.com', (req, res, next) => {
+//   if (req.packet.questions![0].type === 'A') {
+//     return res.answer({
+//       type: 'A',
+//       name: 'example.com',
+//       data: '127.0.0.1',
+//     });
+//   }
+//   next();
+// });
 
 s.handle('whatsmyip', (req, res) => {
   res.answer({
@@ -148,10 +147,6 @@ s.handle('whatsmyip', (req, res) => {
     name: 'whatsmyip',
     data: req.connection.remoteAddress,
   });
-});
-
-s.handle('*', (req, res) => {
-  res.errors.notImplemented();
 });
 
 s.start(() => {
