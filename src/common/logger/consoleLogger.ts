@@ -1,5 +1,5 @@
 import { Logger, LogLevel } from './logger';
-import { DNSRequest, DNSResponse } from '../../server';
+import { DNSRequest, DNSResponse, NextFunction } from '../../server';
 import dnsPacket from 'dns-packet';
 
 export class ConsoleLogger implements Logger {
@@ -11,17 +11,19 @@ export class ConsoleLogger implements Logger {
   register(res: DNSResponse): void {
     res.once('done', () => {
       if (res.packet.answers!.length > 0) {
-        console.log(`[ANSWER] ${res.packet.answers![0].name} ${res.packet.answers![0].type} ${JSON.stringify((res.packet.answers![0] as dnsPacket.StringAnswer).data)} (took ${Date.now() - res.connection.ts}ms)`);
+        console.log(
+          `[ANSWER] ${res.packet.answers![0].name} ${res.packet.answers![0].type} ${JSON.stringify((res.packet.answers![0] as dnsPacket.StringAnswer).data)} (took ${Date.now() - res.connection.ts}ms)`,
+        );
       }
     });
   }
-  handle(req: DNSRequest, res: DNSResponse, next: Function): void {
+  handler(req: DNSRequest, res: DNSResponse, next: NextFunction): void {
     if (this.logRequests) {
       console.log(
         `[QUESTION] ${req.packet.questions![0].name} ${req.packet.questions![0].type} ${req.connection.remoteAddress}`,
       );
     }
-    
+
     if (this.logResponses) {
       this.register(res);
     }

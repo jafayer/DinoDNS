@@ -2,7 +2,7 @@ import dnsPacket from 'dns-packet';
 
 /**
  * Generic serializer for encoding and decoding DNS messages.
- * 
+ *
  * Serializers expect networks to pass them a `Buffer` instance, and decode to an internal type T
  * that should match the internal data structure used within the server.
  */
@@ -16,15 +16,15 @@ export interface Serializer<T> {
  * that can be converted to a DNS answer object.
  */
 export interface CanAnswer<T> {
-    toAnswer(): T;
+  toAnswer(): T;
 }
 
 export class DNSPacketSerializer implements Serializer<dnsPacket.Packet> {
-    encode(packet: dnsPacket.Packet): Buffer {
-        return dnsPacket.encode(packet);
-    }
+  encode(packet: dnsPacket.Packet): Buffer {
+    return dnsPacket.encode(packet);
+  }
 
-    decode(buffer: Buffer): dnsPacket.Packet {
-        return dnsPacket.decode(buffer);
-    }
+  decode(buffer: Buffer): dnsPacket.Packet {
+    return dnsPacket.decode(buffer);
+  }
 }

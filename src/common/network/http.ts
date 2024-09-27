@@ -1,33 +1,36 @@
-import { Network, NetworkHandler, SupportedNetworkType } from "./net";
-import http from "http";
-import { Serializer } from "../dns";
-import dnsPacket from "dns-packet";
-import type { Question, RecordType } from "dns-packet";
-import { Connection } from "./net";
-
+import { Network, NetworkHandler, SupportedNetworkType } from './net';
+import http from 'http';
+import { Serializer } from '../dns';
+import dnsPacket from 'dns-packet';
+import type { Question, RecordType } from 'dns-packet';
+import { Connection } from './net';
 
 /**
  * Default serializer for the HTTP protocol. The `dns-packet` module's
  * `decode` and `encode` methods are passed directly through here.
  */
 export class HTTPSerializer implements Serializer<dnsPacket.Packet> {
-    decode(buffer: Buffer): dnsPacket.Packet {
-        return dnsPacket.decode(buffer);
-    }
+  decode(buffer: Buffer): dnsPacket.Packet {
+    return dnsPacket.decode(buffer);
+  }
 
-    encode(packet: dnsPacket.Packet): Buffer {
-        return dnsPacket.encode(packet);
-    }
+  encode(packet: dnsPacket.Packet): Buffer {
+    return dnsPacket.encode(packet);
+  }
 }
 
-export class DNSOverHTTP implements Network<dnsPacket.Packet, http.ServerResponse> {
+export class DNSOverHTTP implements Network<dnsPacket.Packet> {
   serializer: Serializer<dnsPacket.Packet>;
   private server: http.Server;
   public networkType: SupportedNetworkType = SupportedNetworkType.HTTP;
 
-    constructor(public address: string, public port: number, public handler?: NetworkHandler<dnsPacket.Packet>) {
-        this.server = http.createServer();
-        this.serializer = new HTTPSerializer();
+  constructor(
+    public address: string,
+    public port: number,
+    public handler?: NetworkHandler<dnsPacket.Packet>,
+  ) {
+    this.server = http.createServer();
+    this.serializer = new HTTPSerializer();
 
     this.server.on('request', (req, res) => {
       if (!this.handler) {
@@ -45,7 +48,7 @@ export class DNSOverHTTP implements Network<dnsPacket.Packet, http.ServerRespons
         let packet: dnsPacket.Packet;
         switch (req.method) {
           // get request
-          case 'GET':
+          case 'GET': {
             // get dns query param
             const query = req.url?.split('?')[1];
             const params = new URLSearchParams(query || '');
@@ -76,23 +79,26 @@ export class DNSOverHTTP implements Network<dnsPacket.Packet, http.ServerRespons
               return;
             }
             break;
+          }
           // post request
-          case 'POST':
+          case 'POST': {
             packet = dnsPacket.streamDecode(Buffer.from(data, 'base64'));
             break;
-          default:
+          }
+          default: {
             res.writeHead(400);
             res.end();
             return;
+          }
         }
 
-                if(!this.handler) {
-                    res.writeHead(501);
-                    res.end();
-                    return;
-                }
-                
-                const response = await this.handler(packet, this.toConnection(res));
+        if (!this.handler) {
+          res.writeHead(501);
+          res.end();
+          return;
+        }
+
+        const response = await this.handler(packet, this.toConnection(res));
 
         res.writeHead(200, {
           'Content-Type': 'application/dns-message',

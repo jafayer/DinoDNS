@@ -1,7 +1,5 @@
-import { AnswerTrie, TrieStore } from './trieStore';
-import { DNSRequest, DNSResponse, NextFunction } from '../../server';
-import { Answer, Packet } from 'dns-packet';
-import { Connection } from '../network';
+import { AnswerTrie } from './trieStore';
+import { Answer } from 'dns-packet';
 
 const records: Answer[] = [
   {
@@ -147,34 +145,38 @@ describe('AnswerTrie', () => {
     expect(deserialized.get('foo.bar.example.com', 'A')).toEqual(subSubRecords);
   });
 
-  it('Should emit a cacheRequest event whenever it successfully resolves a request', (done) => {
-    const store = new TrieStore();
-    store.set('example.com', 'A', records);
+  // THIS TEST IS DEPRECATED FOR NOW
+  // We've commented out the explicit cacheRequest behavior in the TriesStore class for now, but
+  // it probably will come back at some point
 
-    // jest should listen for the cacheRequest event
-    const listener = jest.fn();
-    store.on('cacheRequest', listener);
+  // it('Should emit a cacheRequest event whenever it successfully resolves a request', (done) => {
+  //   const store = new TrieStore();
+  //   store.set('example.com', 'A', records);
 
-    store.on('cacheRequest', (req) => {
-      expect(req.zoneName).toEqual('example.com');
-      done();
-    });
+  //   // jest should listen for the cacheRequest event
+  //   const listener = jest.fn();
+  //   store.on('cacheRequest', listener);
 
-    const req = new DNSRequest(
-      {
-        questions: [
-          {
-            name: 'example.com',
-            type: 'A',
-            class: 'IN',
-          },
-        ],
-      } as Packet,
-      {} as Connection,
-    );
+  //   store.on('cacheRequest', (req) => {
+  //     expect(req.zoneName).toEqual('example.com');
+  //     done();
+  //   });
 
-    const res = req.toAnswer();
+  //   const req = new DNSRequest(
+  //     {
+  //       questions: [
+  //         {
+  //           name: 'example.com',
+  //           type: 'A',
+  //           class: 'IN',
+  //         },
+  //       ],
+  //     } as Packet,
+  //     {} as Connection,
+  //   );
 
-    store.handler(req, res, () => {});
-  });
+  //   const res = req.toAnswer();
+
+  //   store.handler(req, res, () => {});
+  // });
 });

@@ -34,17 +34,13 @@ And handlers are registered similarly, the server's `handle` method. For handler
 server.handle('example.com', (req, res) => {...})
 ```
 
-
 A complete, working hello world application is defined below:
 
 ```typescript
-import {DNSServer, DNSOverTCP, DNSOverUDP} from "dinodns";
+import { DNSServer, DNSOverTCP, DNSOverUDP } from 'dinodns';
 
 const server = new DNSServer({
-    networks: [
-        new DNSOverTCP('0.0.0.0', 1053),
-        new DNSOverUDP('0.0.0.0', 1053)
-    ]
+  networks: [new DNSOverTCP('0.0.0.0', 1053), new DNSOverUDP('0.0.0.0', 1053)],
 });
 
 server.handle('example.com', (req, res) => {
@@ -62,7 +58,6 @@ server.handle('example.com', (req, res) => {
   }
 });
 
-
 server.start(() => {
   console.log('Server started');
 });
@@ -70,6 +65,6 @@ server.start(() => {
 
 # Roadmap
 
-* [ ] Full documentation site up
-* [ ] Construct and run benchmarks
-* [ ] Build higher-level abstractions using base class
+- [ ] Full documentation site up
+- [ ] Construct and run benchmarks
+- [ ] Build higher-level abstractions using base class
