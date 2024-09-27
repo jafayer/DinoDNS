@@ -12,7 +12,7 @@
     "rootDir": "./src", // Specify the root directory of input files
     "outDir": "./dist", // Redirect output structure to the directory
     "declarationDir": "./dist", // Output directory for .d.ts files
-    "incremental": true, // Enable incremental compilation
+    "incremental": true // Enable incremental compilation
   },
   "include": ["src/**/*.ts"], // Include your TypeScript source files
   "exclude": ["node_modules", "src/**/*.spec.ts", "src/**/*.test.ts"] // Exclude test files
