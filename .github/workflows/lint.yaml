@@ -1,4 +1,4 @@
-name: Unit Test Check
+name: Lint Check
 on:
   push:
     branches:
@@ -6,7 +6,7 @@ on:
   pull_request:
   workflow_dispatch: {}
 jobs:
-  jest:
+  lint:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,5 +21,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Jest
-        run: npm run test
+      - name: Run ESLint
+        run: npm run lint
