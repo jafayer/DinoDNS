@@ -14,5 +14,5 @@
     "declarationDir": "./dist" // Output directory for .d.ts files
   },
   "include": ["src/**/*.ts"], // Include your TypeScript source files
-  "exclude": ["node_modules"] // Exclude node_modules directory
+  "exclude": ["node_modules", "src/**/*.spec.ts", "src/**/*.test.ts"] // Exclude test files
 }
