@@ -22,8 +22,8 @@
   ],
   "author": "Josh Fayer <contact@fayer.me>",
   "scripts": {
-    "build": "tsc",
-    "build:clean": "rm -rf dist && tsc",
+    "build": "tsc -b -v",
+    "build:clean": "rm -rf dist && tsc -b -v --incremental false",
     "dev": "nodemon",
     "test": "jest",
     "test:watch": "jest --watch",
