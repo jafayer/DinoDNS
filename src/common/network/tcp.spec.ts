@@ -1,12 +1,14 @@
-import { TCPSerializer } from "./tcp";
+import { TCPSerializer } from './tcp';
 import dnsPacket from 'dns-packet';
 
-describe("TCPSerializer", () => {
+describe('TCPSerializer', () => {
   let tcpSerializer: TCPSerializer;
-  const queryPacket = Buffer.from('\x00\x1D\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07example\x03com\x00\x00\x01\x00\x01')
+  const queryPacket = Buffer.from(
+    '\x00\x1D\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07example\x03com\x00\x00\x01\x00\x01',
+  );
   beforeEach(() => {
     tcpSerializer = new TCPSerializer();
-  })
+  });
 
   it('Should be able to parse incoming queries', () => {
     const query = tcpSerializer.decode(queryPacket);
@@ -16,7 +18,7 @@ describe("TCPSerializer", () => {
     expect(query.questions![0].name).toBe('example.com');
     expect(query.questions![0].type).toBe('A');
     expect(query.questions![0].class).toBe('IN');
-  })
+  });
 
   it('Should be able to serialize queries', () => {
     const query: dnsPacket.Packet = {
@@ -25,14 +27,12 @@ describe("TCPSerializer", () => {
         {
           name: 'example.com',
           type: 'A',
-          class: 'IN'
-        }
+          class: 'IN',
+        },
       ],
-      
-    }
+    };
     const packet = tcpSerializer.encode(query);
 
     expect(packet).toEqual(queryPacket);
-  })
-}); 
-
+  });
+});
