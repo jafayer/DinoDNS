@@ -1,95 +1,38 @@
-import dgram from 'dgram';
-import dnsPacket from 'dns-packet';
-import { DNSOverUDP } from './udp';
-import type { StringAnswer } from 'dns-packet';
-import { DNSRequest } from '../../server';
+import { UDPSerializer } from "./udp";
+import dnsPacket from "dns-packet";
 
-describe('DNSOverTCP Integration Tests', () => {
-  let server: DNSOverUDP;
-  let client: dgram.Socket;
+describe("UDPSerializer", () => {
+  let queryPacket = Buffer.from('\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07example\x03com\x00\x00\x01\x00\x01')
+  let udpSerializer: UDPSerializer;
 
   beforeEach(() => {
-    server = new DNSOverUDP('localhost', 8053);
+    udpSerializer = new UDPSerializer();
+  })
 
-    server.listen();
+  it('Should be able to parse incoming queries', () => {
+    const query = udpSerializer.decode(queryPacket);
 
-    client = dgram.createSocket('udp4');
-  });
+    expect(query.id).toBe(1);
+    expect(query.questions!.length).toBe(1);
+    expect(query.questions![0].name).toBe('example.com');
+    expect(query.questions![0].type).toBe('A');
+    expect(query.questions![0].class).toBe('IN');
+  })
 
-  afterEach(() => {
-    server.close();
-    client.close();
-  });
-
-  it('Should be able to parse incoming queries', (done) => {
-    server.handler = async (packet, rinfo) => {
-      expect(packet.questions![0].name).toBe('google.com');
-      expect(packet.questions![0].type).toBe('A');
-      expect(packet.questions![0].class).toBe('IN');
-      done();
-
-      return new DNSRequest(packet, rinfo).toAnswer();
-    };
-
-    const query = dnsPacket.encode({
-      type: 'query',
+  it('Should be able to serialize queries', () => {
+    const query: dnsPacket.Packet = {
       id: 1,
-      flags: dnsPacket.RECURSION_DESIRED,
       questions: [
         {
+          name: 'example.com',
           type: 'A',
-          name: 'google.com',
-        },
+          class: 'IN'
+        }
       ],
-    });
+      
+    }
+    const packet = udpSerializer.encode(query);
 
-    client.send(new Uint8Array(query), 8053, 'localhost');
-  });
-
-  it('Should be able to send responses', (done) => {
-    server.handler = async (packet, rinfo) => {
-      const response = dnsPacket.encode({
-        type: 'response',
-        id: packet.id,
-        flags: dnsPacket.RECURSION_DESIRED,
-        questions: packet.questions,
-        answers: [
-          {
-            type: 'A',
-            name: 'google.com',
-            data: '127.0.0.1',
-            ttl: 60,
-          },
-        ],
-      });
-
-      client.send(new Uint8Array(response), rinfo.remotePort, rinfo.remoteAddress);
-
-      return new DNSRequest(packet, rinfo).toAnswer();
-    };
-
-    // Listen for response
-    client.on('message', (data) => {
-      const packet = dnsPacket.decode(data);
-      expect(packet.answers!.length).toBe(1);
-      expect((packet.answers![0] as StringAnswer).name).toBe('google.com');
-      expect((packet.answers![0] as StringAnswer).data).toBe('127.0.0.1');
-      done();
-    });
-
-    // Send query
-    const query = dnsPacket.encode({
-      type: 'query',
-      id: 1,
-      flags: dnsPacket.RECURSION_DESIRED,
-      questions: [
-        {
-          type: 'A',
-          name: 'google.com',
-        },
-      ],
-    });
-
-    client.send(new Uint8Array(query), 8053, 'localhost');
+    expect(packet).toEqual(queryPacket);
   });
 });
