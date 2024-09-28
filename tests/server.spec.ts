@@ -1,7 +1,7 @@
 import { DNSServer } from '../src/server';
 import { DNSOverTCP, DNSOverUDP } from '../src/common/network';
 import { TrieStore } from '../src/common/store';
-import dns from "node:dns";
+import dns from 'node:dns';
 
 describe('server', () => {
   it('Should throw an error when it tries to respond twice to the same request', async () => {
@@ -75,11 +75,6 @@ describe('server', () => {
     server.start(() => {
       console.log('Server started');
     });
-
-
-    // wait 3 seconds
-    // await new Promise((resolve) => setTimeout(resolve, 3000))
-
 
     // query localhost:8053 for example.com
     const resolver = new dns.promises.Resolver();
