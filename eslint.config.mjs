@@ -17,7 +17,6 @@ export default [
 
       parserOptions: {
         project: './tsconfig.eslint.json',
-        tsconfigRootDir: '/home/josh/Projects/ts-dns-server',
       },
     },
 
