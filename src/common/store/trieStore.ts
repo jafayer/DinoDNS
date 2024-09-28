@@ -3,6 +3,14 @@ import { Answer, RecordType } from 'dns-packet';
 import { EventEmitter } from 'events';
 import { DNSRequest, DNSResponse, NextFunction, Handler } from '../../server';
 
+interface DeserializedTrieData {
+  trie: DeserializedTrie;
+  data: [string, Answer[]][];
+}
+
+interface DeserializedTrie {
+  [key: string]: DeserializedTrieData;
+}
 /**
  * A Trie data structure for storing zone data in memory.
  *
@@ -226,7 +234,7 @@ export class AnswerTrie {
     return JSON.stringify(obj);
   }
 
-  private deserializeTrie(obj: object) {
+  private deserializeTrie(obj: DeserializedTrie) {
     for (const [key, value] of Object.entries(obj)) {
       const trie = new AnswerTrie();
       trie.deserializeTrie(value.trie);
@@ -239,7 +247,7 @@ export class AnswerTrie {
   }
 
   static fromString(str: string): AnswerTrie {
-    const obj = JSON.parse(str);
+    const obj = JSON.parse(str) as DeserializedTrie;
     const trie = new AnswerTrie();
     trie.deserializeTrie(obj);
     return trie;

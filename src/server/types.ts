@@ -5,8 +5,7 @@ import { CombineFlags, RCode } from '../common/core/utils';
 import { EventEmitter } from 'events';
 
 export interface NextFunction {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (err?: any): void;
+  (err?: Error): void;
 }
 
 export interface Handler {
@@ -32,7 +31,7 @@ export class DuplicateAnswerForRequest extends Error {
  */
 export class DNSResponse extends EventEmitter {
   packet: dnsPacket.Packet;
-  connection: Connection;
+  readonly connection: Connection;
   private fin: boolean = false;
 
   constructor(packet: dnsPacket.Packet, connection: Connection) {
@@ -42,20 +41,7 @@ export class DNSResponse extends EventEmitter {
   }
 
   done(): void {
-    const handler = {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      set: (target: any, property: string | symbol, value: any) => {
-        if (this.fin) {
-          throw new ModifiedAfterSentError();
-        }
-        target[property] = value;
-        return true;
-      },
-    };
-
-    this.packet = new Proxy(this.packet, handler);
-    this.packet.answers = new Proxy(this.packet.answers, handler);
-
+    this.packet = this.freezePacket();
     this.emit('done', this.packet);
     this.fin = true;
   }
@@ -108,6 +94,14 @@ export class DNSResponse extends EventEmitter {
       this.done();
     },
   };
+
+  private freezePacket() {
+    return new Proxy(this.packet, {
+      set: () => {
+        throw new ModifiedAfterSentError();
+      },
+    });
+  }
 }
 
 export class DNSRequest implements CanAnswer<DNSResponse> {
