@@ -48,7 +48,7 @@ export class DNSOverUDP implements Network<dnsPacket.Packet> {
 
       const packet = this.serializer.decode(msg);
       const resp = await this.handler(packet, this.toConnection(rinfo));
-      this.server.send(new Uint8Array(this.serializer.encode(resp.packet)), rinfo.port, rinfo.address);
+      this.server.send(new Uint8Array(this.serializer.encode(resp.packet.raw)), rinfo.port, rinfo.address);
     });
   }
 

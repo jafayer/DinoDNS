@@ -24,25 +24,107 @@ export class DuplicateAnswerForRequest extends Error {
   }
 }
 
+class PacketWrapper {
+  raw: dnsPacket.Packet;
+  frozen: boolean = false;
+
+  constructor(packet: dnsPacket.Packet) {
+    this.raw = packet;
+  }
+
+  get type(): dnsPacket.Packet['type'] {
+    return this.raw.type;
+  }
+
+  set type(type: dnsPacket.Packet['type']) {
+    if (this.frozen) {
+      throw new ModifiedAfterSentError();
+    }
+    this.raw.type = type;
+  }
+
+  get flags(): number | undefined {
+    return this.raw.flags;
+  }
+
+  set flags(flags: number) {
+    if (this.frozen) {
+      throw new ModifiedAfterSentError();
+    }
+    this.raw.flags = flags;
+  }
+
+  get questions(): ReadonlyArray<dnsPacket.Question> {
+    return this.raw.questions || [];
+  }
+
+  set questions(questions: dnsPacket.Question[]) {
+    if (this.frozen) {
+      throw new ModifiedAfterSentError();
+    }
+    this.raw.questions = questions;
+  }
+
+  get answers(): ReadonlyArray<dnsPacket.Answer> {
+    return this.raw.answers || [];
+  }
+
+  set answers(answers: dnsPacket.Answer[]) {
+    if (this.frozen) {
+      throw new ModifiedAfterSentError();
+    }
+    this.raw.answers = answers || [];
+  }
+
+  get additionals(): ReadonlyArray<dnsPacket.Answer> {
+    return this.raw.additionals || [];
+  }
+
+  set additionals(additionals: dnsPacket.Answer[]) {
+    if (this.frozen) {
+      throw new ModifiedAfterSentError();
+    }
+    this.raw.additionals = additionals || [];
+  }
+
+  copy(): PacketWrapper {
+    return new PacketWrapper({ ...this.raw });
+  }
+
+  freeze(): PacketWrapper {
+    const copy = this.copy();
+    copy.frozen = true;
+
+    Object.freeze(copy);
+    Object.freeze(copy.raw.type);
+    Object.freeze(copy.raw.flags);
+    Object.freeze(copy.raw.questions);
+    Object.freeze(copy.raw.answers);
+    Object.freeze(copy.raw.additionals);
+    Object.freeze(copy);
+
+    return copy;
+  }
+}
 /**
  * Default class representing a DNS Response.
  *
  * DNS Responses contain the serialized packet data, and data about the connection.
  */
 export class DNSResponse extends EventEmitter {
-  packet: dnsPacket.Packet;
+  packet: PacketWrapper;
   readonly connection: Connection;
   private fin: boolean = false;
 
   constructor(packet: dnsPacket.Packet, connection: Connection) {
     super();
-    this.packet = packet;
+    this.packet = new PacketWrapper(packet);
     this.connection = connection;
   }
 
   done(): void {
-    this.packet = this.freezePacket();
-    this.emit('done', this.packet);
+    this.packet = this.packet.freeze();
+    this.emit('done', { ...this.packet.raw });
     this.fin = true;
   }
 
@@ -94,14 +176,6 @@ export class DNSResponse extends EventEmitter {
       this.done();
     },
   };
-
-  private freezePacket() {
-    return new Proxy(this.packet, {
-      set: () => {
-        throw new ModifiedAfterSentError();
-      },
-    });
-  }
 }
 
 export class DNSRequest implements CanAnswer<DNSResponse> {

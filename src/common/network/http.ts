@@ -104,7 +104,7 @@ export class DNSOverHTTP implements Network<dnsPacket.Packet> {
           'Content-Type': 'application/dns-message',
         });
 
-        res.end(dnsPacket.encode(response.packet));
+        res.end(dnsPacket.encode(response.packet.raw));
       });
     });
   }

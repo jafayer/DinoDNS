@@ -284,7 +284,6 @@ export class TrieStore extends EventEmitter implements Store {
 
     if (records && records.length > 0) {
       res.answer(records);
-
       // this.emit('cacheRequest', {
       //     zoneName: this.trie.resolve(name),
       //     recordType: type,

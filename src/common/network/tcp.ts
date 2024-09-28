@@ -41,7 +41,7 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
         }
         const packet = dnsPacket.streamDecode(data);
         const resp = await this.handler(packet, this.toConnection(socket));
-        socket.write(new Uint8Array(this.serializer.encode(resp.packet)));
+        socket.write(new Uint8Array(this.serializer.encode(resp.packet.raw)));
       });
 
       socket.on('end', () => {
