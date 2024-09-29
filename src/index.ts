@@ -53,7 +53,7 @@ store.set('example.com', 'MX', {
 });
 
 store.set('example.net', 'A', {
-  name: 'example.com',
+  name: 'example.net',
   type: 'A',
   class: 'IN',
   ttl: 300,
@@ -109,24 +109,30 @@ s.use(store.handler);
 // s.use(forward);
 
 s.handle('example.net', (req, res) => {
-  res.packet.answers?.push({
-    type: 'SOA',
-    name: 'example.net',
-    data: {
-      mname: 'ns1.example.com',
-      rname: 'admin.example.com',
-      serial: 2021101001,
-      refresh: 3600,
-      retry: 600,
-      expire: 604800,
-      minimum: 60,
+  res.packet.answers = [
+    ...res.packet.answers!,
+    {
+      type: 'SOA',
+      name: 'example.net',
+      data: {
+        mname: 'ns1.example.com',
+        rname: 'admin.example.com',
+        serial: 2021101001,
+        refresh: 3600,
+        retry: 600,
+        expire: 604800,
+        minimum: 60,
+      },
     },
-  });
-  res.packet.answers?.push({
-    type: 'A',
-    name: 'example.net',
-    data: '127.0.0.1',
-  });
+  ];
+  res.packet.answers = [
+    ...res.packet.answers!,
+    {
+      type: 'A',
+      name: 'example.net',
+      data: '127.0.0.1',
+    },
+  ];
   res.resolve();
 });
 

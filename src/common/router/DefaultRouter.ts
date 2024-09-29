@@ -43,7 +43,11 @@ export class DefaultRouter implements Router {
 
       const nextHandler = (err?: unknown) => {
         if (i >= handlers.length) {
-          return next(err);
+          if (err instanceof Error) {
+            return next(err);
+          }
+
+          return next();
         }
         const handler = handlers[i++];
         try {

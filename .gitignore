@@ -8,6 +8,7 @@ node_modules
 
 # Build artifacts
 dist
+*.tsbuildinfo
 
 # Test coverage reports
 coverage/
