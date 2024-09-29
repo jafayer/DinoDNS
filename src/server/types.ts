@@ -28,16 +28,16 @@ export class DuplicateAnswerForRequest extends Error {
 /**
  * The packet wrapper class is intended to solve a couple of problems with the provided `Packet type
  * from `dns-packet`.
- * 
+ *
  * The first is that there's currently no way to provide a read-only view of the packet, which is
  * essential for ensuring that the packet is not modified after it has been sent.
- * 
+ *
  * The second is that many of the properties of the packet are optional, which leads to some awkward
  * type assertions when using the raw packet. For example, any time you want to access the `answers`
  * property, you have to assert that it's not `undefined` or `null`, despite the fact that we can set
- * it to an empty array if it's not provided. Likewise, `questions` in practice should never be 
+ * it to an empty array if it's not provided. Likewise, `questions` in practice should never be
  * undefined, though it could of course be an empty array.
- * 
+ *
  * This class is not generic because it heavily relies on the structure of the `Packet` type from
  * `dns-packet`. If the `Packet` type changes, this class will need to be updated.
  */
