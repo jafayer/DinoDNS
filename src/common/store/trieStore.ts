@@ -74,7 +74,7 @@ export class AnswerTrie {
         return response.map((record) => {
           return {
             ...record,
-            name: labels.toReversed().join('.') + '.' + record.name.replace('*', ''),
+            name: labels.toReversed().join('.') + '.' + record.name.replace(/\*/g, ''),
           };
         });
       }
@@ -82,7 +82,7 @@ export class AnswerTrie {
       return response.map((record) => {
         return {
           ...record,
-          name: labels.toReversed().join('.') + '.' + record.name.replace('*.', ''),
+          name: labels.toReversed().join('.') + '.' + record.name.replace(/\*\./g, ''),
         };
       });
     }
