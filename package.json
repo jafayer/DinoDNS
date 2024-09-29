@@ -33,6 +33,7 @@
     "docs:serve": "npx http-server docs -o",
     "lint": "eslint",
     "lint:fix": "eslint . --ext .ts --fix",
+    "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepublishOnly": "npm run build:prod",
