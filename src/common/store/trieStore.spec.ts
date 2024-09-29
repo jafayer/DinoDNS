@@ -85,7 +85,11 @@ describe('AnswerTrie', () => {
   });
 
   it('Should be able to resolve wildcard queries', () => {
-    trie.add('*.example.com', 'A', records);
+    trie.add(
+      '*.example.com',
+      'A',
+      records.map((r) => ({ ...r, name: '*.example.com' })),
+    );
     const subRecords = records.map((record) => {
       return {
         ...record,
@@ -96,7 +100,11 @@ describe('AnswerTrie', () => {
   });
 
   it('Should be able to resolve wildcard queries with multiple labels', () => {
-    trie.add('*.example.com', 'A', records);
+    trie.add(
+      '*.example.com',
+      'A',
+      records.map((r) => ({ ...r, name: '*.example.com' })),
+    );
     const subRecords = records.map((record) => {
       return {
         ...record,
@@ -120,8 +128,16 @@ describe('AnswerTrie', () => {
 
   it('Should be able to deserialie and serialize the trie', () => {
     trie.add('example.com', 'A', records);
-    trie.add('*.example.com', 'A', records);
-    trie.add('*.sub.example.com', 'A', records);
+    trie.add(
+      '*.example.com',
+      'A',
+      records.map((r) => ({ ...r, name: '*.example.com' })),
+    );
+    trie.add(
+      '*.sub.example.com',
+      'A',
+      records.map((r) => ({ ...r, name: '*.sub.example.com' })),
+    );
 
     const serialized = trie.toString();
     const deserialized = AnswerTrie.fromString(serialized);
