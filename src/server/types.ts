@@ -3,7 +3,6 @@ import { Connection } from '../common/network';
 import { CanAnswer } from '../common/dns';
 import { CombineFlags, RCode } from '../common/core/utils';
 import { EventEmitter } from 'events';
-import { ZoneData } from '../types/dnsLibTypes';
 
 export interface NextFunction {
   (err?: Error): void;

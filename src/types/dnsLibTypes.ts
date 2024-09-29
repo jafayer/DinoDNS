@@ -26,7 +26,7 @@ import type {
 export type ZoneData = {
   [T in StringRecordType]: string;
 } & {
-  [T in Exclude<OtherRecordType, StringRecordType>]: Buffer;
+  [T in OtherRecordType]: Buffer;
 } & {
   CAA: CaaData;
   DNSKEY: DnskeyData;
