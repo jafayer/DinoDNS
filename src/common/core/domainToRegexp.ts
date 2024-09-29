@@ -32,3 +32,41 @@ export function domainToRegexp(domain: string): HandlerMatch {
 export function match(domain: string, handler: HandlerMatch): boolean {
   return handler.regexp.test(domain);
 }
+
+/**
+ * When presented with a domain name that contains a wildcard, and a label want to apply to it,
+ * this function will handle replacing the wildcard with the label and return the full domain name.
+ * 
+ * Example:
+ * - `resolveWildcards('sub', '*.example.com')` returns `sub.example.com`
+ * - `resolveWildcards('sub', 'example.com')` returns `example.com`
+ * - `resolveWildcards('second.sub', '*.example.com')` returns `second.sub.example.com`
+ * 
+ * Note that by convention, wildcards are only supported on the first label of the domain. Any other
+ * wildcards will be treated as a literal `*` character.
+ * 
+ * Example:
+ * - `resolveWildcards('sub', '*.example.*.com')` returns `sub.example.*.com`
+ * 
+ * Also note that this function will attempt to correct for any leading separators, likely due to
+ * attempting to replace a wildcard with an empty string. Since each domain label is expected to be
+ * non-empty, this function will consider an empty label to be equivalent to removal of the subdomain
+ * altogether.
+ * 
+ * @param incomingLabel 
+ * @param domainWildcard 
+ */
+export function resolveWildcards(
+  incomingLabel: string,
+  domainWildcard: string
+) {
+  const parts = domainWildcard.split('.');
+  if (parts[0] === '*') {
+    if (incomingLabel === '') {
+      parts.shift();
+    } else {
+      parts[0] = incomingLabel;
+    }
+  }
+  return parts.join('.');
+}

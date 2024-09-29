@@ -2,6 +2,7 @@ import { Store } from './Store';
 import { Answer, RecordType } from 'dns-packet';
 import { EventEmitter } from 'events';
 import { DNSRequest, DNSResponse, NextFunction, Handler } from '../../server';
+import { resolveWildcards } from '../core/domainToRegexp';
 
 interface DeserializedTrieData {
   trie: DeserializedTrie;
@@ -74,7 +75,7 @@ export class AnswerTrie {
         return response.map((record) => {
           return {
             ...record,
-            name: labels.toReversed().join('.') + '.' + record.name.replace(/\*/g, ''),
+            name: resolveWildcards(labels.toReversed().join('.'), record.name),
           };
         });
       }
@@ -82,7 +83,7 @@ export class AnswerTrie {
       return response.map((record) => {
         return {
           ...record,
-          name: labels.toReversed().join('.') + '.' + record.name.replace(/\*\./g, ''),
+          name: resolveWildcards(labels.toReversed().join('.'), record.name),
         };
       });
     }
