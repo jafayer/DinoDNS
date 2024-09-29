@@ -36,7 +36,7 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepublishOnly": "npm run build:prod",
+    "prepublishOnly": "npm run build:clean",
     "postpublish": "git push --follow-tags",
     "publish": "npm publish"
   },
