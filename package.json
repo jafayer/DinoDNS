@@ -1,6 +1,6 @@
 {
   "name": "dinodns",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "A pure Typescript, low-configuration full DNS server",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
