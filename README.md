@@ -2,7 +2,13 @@
 
 A pure TypeScript, modular DNS server inspired by [Express](https://expressjs.com/), [Nest.js](https://nestjs.com/), and [CoreDNS](https://coredns.io).
 
-⚠️ **WARNNING:** this framework is under active development and is in its very early days. There may be changes to the core APIs and right now no guarantees are made about its stability.
+⚠️ **WARNING:** this framework is under active development and is in its very early days. There may be changes to the core APIs and right now no guarantees are made about its stability.
+
+![Building](https://github.com/jafayer/DinoDNS/actions/workflows/build.yaml/badge.svg)
+![Formatted](https://github.com/jafayer/DinoDNS/actions/workflows/format.yaml/badge.svg)
+![Linted](https://github.com/jafayer/DinoDNS/actions/workflows/lint.yaml/badge.svg)
+![Tests](https://github.com/jafayer/DinoDNS/actions/workflows/tests.yaml/badge.svg)
+![Typecheck](https://github.com/jafayer/DinoDNS/actions/workflows/typecheck.yaml/badge.svg)
 
 ## Installation
 
