@@ -15,6 +15,7 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
+  "homepage": "https://www.dinodns.dev",
   "keywords": [
     "dns",
     "server",
