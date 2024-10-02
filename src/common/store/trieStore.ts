@@ -57,6 +57,25 @@ export class AnswerTrie {
     this._insert(this.domainToLabels(domain), rType, data);
   }
 
+  private _getExact(labels: string[], rType?: RecordType): Answer[] | null {
+    if (labels.length === 0) {
+      if (rType) {
+        return this.data.get(rType) || null;
+      }
+
+      return Array.from(this.data.values()).flat();
+    }
+
+    const [label, ...rest] = labels;
+    const next = this.trie.get(label);
+
+    if (!next) {
+      return null;
+    }
+
+    return next._getExact(rest, rType);
+  }
+
   private _get(labels: string[], rType?: RecordType): Answer[] | null {
     if (labels.length === 0) {
       if (rType) {
@@ -99,6 +118,13 @@ export class AnswerTrie {
   }
 
   get(domain: string, rType?: RecordType): Answer[] | null {
+
+    // first try to get the exact match
+    const exact = this._getExact(this.domainToLabels(domain), rType);
+    if (exact) {
+      return exact;
+    }
+
     const result = this._get(this.domainToLabels(domain), rType);
     if (!result || result.length === 0) {
       return null;

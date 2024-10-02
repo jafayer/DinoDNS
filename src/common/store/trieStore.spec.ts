@@ -1,5 +1,5 @@
 import { AnswerTrie } from './trieStore';
-import { Answer } from 'dns-packet';
+import { Answer, StringAnswer } from 'dns-packet';
 
 const records: Answer[] = [
   {
@@ -159,6 +159,28 @@ describe('AnswerTrie', () => {
     expect(deserialized.get('example.com', 'A')).toEqual(records);
     expect(deserialized.get('foo.example.com', 'A')).toEqual(subRecords);
     expect(deserialized.get('foo.bar.example.com', 'A')).toEqual(subSubRecords);
+  });
+
+  it('Should resolve an exact match before a wildcard match', () => {
+    const specificRecords: Answer[] = [{name: 'test.example.com', type: 'A', class: 'IN', ttl: 300, data: '127.0.0.3'}];
+    trie.add('*.example.com', 'A', records.map((r) => ({ ...r, name: '*.example.com' })));
+    trie.add('test.example.com', 'A', specificRecords);
+
+    const result = trie.get('test.example.com', 'A');
+    console.log(result);
+    expect(result).toEqual(specificRecords);
+    expect(trie.get('another.example.com', 'A')).toEqual(records.map((r) => ({ ...r, name: 'another.example.com' })));
+  });
+
+  it('should resolve the leftmost/least specific wildcard first if there are collissions', () => {
+    const leastSpecificWildcard = records.map((r) => ({ ...r, name: '*.example.com', data: '127.0.0.1' } as Answer));
+    const moreSpecificWildcard = records.map((r) => ({ ...r, name: '*.sub.example.com', data: '.127.0.0.2' } as Answer));
+
+    trie.add('*.example.com', 'A', leastSpecificWildcard);
+    trie.add('*.sub.example.com', 'A', moreSpecificWildcard);
+
+    const result = trie.get('sub.sub.example.com', 'A');
+    expect(expect(result).toEqual(leastSpecificWildcard.map((r) => ({ ...r, name: 'sub.sub.example.com' }))));
   });
 
   // THIS TEST IS DEPRECATED FOR NOW
