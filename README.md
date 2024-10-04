@@ -73,7 +73,7 @@ server.start(() => {
 
 ### Answer types
 
-* OPT answers are currently unsupported
+- OPT answers are currently unsupported
 
 # Roadmap
 
