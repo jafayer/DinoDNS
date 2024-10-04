@@ -1,4 +1,4 @@
-import type { Serializer } from '../dns';
+import type { Serializer } from '../serializers';
 import type { DNSResponse } from '../../server';
 
 export interface NetworkHandler<T> {

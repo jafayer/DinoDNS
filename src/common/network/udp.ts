@@ -1,5 +1,5 @@
 import { Network, NetworkHandler, SupportedNetworkType, Connection } from './net';
-import { Serializer } from '../dns';
+import { Serializer } from '../serializers';
 import dgram from 'dgram';
 import dnsPacket from 'dns-packet';
 import { RCode, CombineFlags } from '../core/utils';

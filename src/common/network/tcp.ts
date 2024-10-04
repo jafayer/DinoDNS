@@ -1,5 +1,5 @@
 import net from 'net';
-import { Serializer } from '../dns';
+import { Serializer } from '../serializers';
 import dnsPacket from 'dns-packet';
 import { Network, NetworkHandler, SupportedNetworkType, Connection } from './net';
 

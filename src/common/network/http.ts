@@ -1,6 +1,6 @@
 import { Network, NetworkHandler, SupportedNetworkType } from './net';
 import http from 'http';
-import { Serializer } from '../dns';
+import { Serializer } from '../serializers';
 import dnsPacket from 'dns-packet';
 import type { Question, RecordType } from 'dns-packet';
 import { Connection } from './net';
