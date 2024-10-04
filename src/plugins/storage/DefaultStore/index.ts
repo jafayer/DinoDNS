@@ -2,7 +2,7 @@ import { Store } from '../Store';
 import { Answer, RecordType } from 'dns-packet';
 import { EventEmitter } from 'events';
 import { DNSRequest, DNSResponse, NextFunction, Handler } from '../../../common/server';
-import { resolveWildcards } from "../../../common/core/domainToRegexp";
+import { resolveWildcards } from '../../../common/core/domainToRegexp';
 
 interface DeserializedTrieData {
   trie: DeserializedTrie;
@@ -118,7 +118,6 @@ export class AnswerTrie {
   }
 
   get(domain: string, rType?: RecordType): Answer[] | null {
-
     // first try to get the exact match
     const exact = this._getExact(this.domainToLabels(domain), rType);
     if (exact) {

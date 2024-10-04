@@ -162,8 +162,14 @@ describe('AnswerTrie', () => {
   });
 
   it('Should resolve an exact match before a wildcard match', () => {
-    const specificRecords: Answer[] = [{name: 'test.example.com', type: 'A', class: 'IN', ttl: 300, data: '127.0.0.3'}];
-    trie.add('*.example.com', 'A', records.map((r) => ({ ...r, name: '*.example.com' })));
+    const specificRecords: Answer[] = [
+      { name: 'test.example.com', type: 'A', class: 'IN', ttl: 300, data: '127.0.0.3' },
+    ];
+    trie.add(
+      '*.example.com',
+      'A',
+      records.map((r) => ({ ...r, name: '*.example.com' })),
+    );
     trie.add('test.example.com', 'A', specificRecords);
 
     const result = trie.get('test.example.com', 'A');
@@ -173,8 +179,10 @@ describe('AnswerTrie', () => {
   });
 
   it('should resolve the leftmost/least specific wildcard first if there are collissions', () => {
-    const leastSpecificWildcard = records.map((r) => ({ ...r, name: '*.example.com', data: '127.0.0.1' } as Answer));
-    const moreSpecificWildcard = records.map((r) => ({ ...r, name: '*.sub.example.com', data: '.127.0.0.2' } as Answer));
+    const leastSpecificWildcard = records.map((r) => ({ ...r, name: '*.example.com', data: '127.0.0.1' }) as Answer);
+    const moreSpecificWildcard = records.map(
+      (r) => ({ ...r, name: '*.sub.example.com', data: '.127.0.0.2' }) as Answer,
+    );
 
     trie.add('*.example.com', 'A', leastSpecificWildcard);
     trie.add('*.sub.example.com', 'A', moreSpecificWildcard);
