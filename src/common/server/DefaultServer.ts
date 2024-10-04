@@ -1,10 +1,10 @@
-import { DNSRequest, DNSResponse, NextFunction } from './types';
-import { Network } from '../common/network';
-import { Handler } from './types';
-import { DefaultRouter, Router } from '../common/router';
+import { DNSRequest, DNSResponse, NextFunction } from '../../types/server';
+import { Network } from '../network';
+import { Handler } from '../../types/server';
+import { DefaultRouter, Router } from '../router';
 import dnsPacket from 'dns-packet';
 
-export interface Server<PacketType> {
+export interface DNSServer<PacketType> {
   networks: Network<PacketType>[];
 
   default(req: DNSRequest, res: DNSResponse, next: NextFunction): void;
@@ -16,7 +16,7 @@ export interface Server<PacketType> {
   stop(): void;
 }
 
-type DNSServerProps<PacketType> = {
+type DefaultServerProps<PacketType> = {
   /** Defines one or more network interfaces for the DNS Server */
   networks: Network<PacketType>[];
 
@@ -28,19 +28,19 @@ type DNSServerProps<PacketType> = {
 };
 
 /**
- * DNSServer is the main server class.
+ * DefaultServer is the main server class.
  *
  * It is responsible for handling incoming DNS requests
  * and routing them to the appropriate handler(s).
  *
- * DNSServer is extensible and can be configured with
+ * DefaultServer is extensible and can be configured with
  * custom middlewares, handlers, routers, loggers, networks, and caches.
  */
-export class DNSServer implements Server<dnsPacket.Packet> {
+export class DefaultServer implements DNSServer<dnsPacket.Packet> {
   public networks: Network<dnsPacket.Packet>[] = [];
   private router: Router;
 
-  constructor(props: DNSServerProps<dnsPacket.Packet>) {
+  constructor(props: DefaultServerProps<dnsPacket.Packet>) {
     this.networks = props.networks;
     this.router = props.router || new DefaultRouter();
 

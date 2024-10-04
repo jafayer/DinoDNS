@@ -1,5 +1,5 @@
-import { Logger, LogLevel } from './logger';
-import { DNSRequest, DNSResponse, NextFunction } from '../../server';
+import { Logger, LogLevel } from '../logger';
+import { DNSRequest, DNSResponse, NextFunction } from '../../../common/server';
 
 export class ConsoleLogger implements Logger {
   constructor(

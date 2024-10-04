@@ -1,15 +1,15 @@
-import { ConsoleLogger } from './common/logger';
-import { DNSServer } from './server';
+import { ConsoleLogger } from './plugins/loggers';
+import { DefaultServer } from './common/server';
 import { DNSOverTCP, DNSOverUDP } from './common/network';
-import { Handler } from './server';
-import { TrieStore } from './common/store';
+import { Handler } from './common/server';
+import { DefaultStore } from './plugins/storage';
 
 export * as network from './common/network';
-export * as logging from './common/logger';
-export * as server from './server';
-export * as store from './common/store';
+export * as logging from './plugins/loggers';
+export * as server from './common/server';
+export * as store from './plugins/storage';
 
-export { SupportedAnswer } from './types/dnsLibTypes';
+export { SupportedAnswer } from './types/dns';
 
 export {
   DNSOverTCP,
@@ -21,20 +21,20 @@ export {
   TCPSerializer,
   UDPSerializer,
 } from './common/network';
-export { ConsoleLogger, Logger } from './common/logger';
-export { DNSServer, DNSRequest, DNSResponse, Handler, NextFunction } from './server';
-export { TrieStore, Store } from './common/store';
+export { ConsoleLogger, Logger } from './plugins/loggers';
+export { DNSServer, DNSRequest, DNSResponse, Handler, NextFunction } from './common/server';
+export { DefaultStore, Store } from './plugins/storage';
 export { DefaultRouter, Router } from './common/router';
 
 const logger = new ConsoleLogger(true, true);
-const s = new DNSServer({
+const s = new DefaultServer({
   networks: [new DNSOverTCP('localhost', 1053), new DNSOverUDP('localhost', 1053)],
   defaultHandler: (req, res) => {
     res.errors.nxDomain();
   },
 });
 
-const store = new TrieStore();
+const store = new DefaultStore();
 store.set('example.com', 'A', {
   name: 'example.com',
   type: 'A',

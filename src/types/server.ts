@@ -1,9 +1,9 @@
 import dnsPacket from 'dns-packet';
 import { Connection } from '../common/network';
-import { CanAnswer } from '../common/dns';
+import { CanAnswer } from '../common/serializer';
 import { CombineFlags, RCode } from '../common/core/utils';
 import { EventEmitter } from 'events';
-import { SupportedAnswer } from '../types/dnsLibTypes';
+import { SupportedAnswer } from '../types/dns';
 
 export interface NextFunction {
   (err?: Error): void;

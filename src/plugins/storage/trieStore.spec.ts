@@ -1,5 +1,5 @@
-import { AnswerTrie } from './trieStore';
-import { SupportedAnswer } from '../../types/dnsLibTypes';
+import { AnswerTrie } from './DefaultStore';
+import { SupportedAnswer } from '../../types/dns';
 
 const records: SupportedAnswer[] = [
   {

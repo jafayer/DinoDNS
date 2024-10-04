@@ -2,7 +2,7 @@ import { server, network, store, logging } from '../..';
 
 const logger = new logging.ConsoleLogger(true, true);
 
-const st = new store.TrieStore();
+const st = new store.DefaultStore();
 st.set('*', 'TXT', {
   name: 'example.com',
   type: 'TXT',
@@ -11,7 +11,7 @@ st.set('*', 'TXT', {
   data: 'Hello, World!',
 });
 
-const s = new server.DNSServer({
+const s = new server.DefaultServer({
   networks: [new network.DNSOverTCP('localhost', 1054), new network.DNSOverUDP('localhost', 1054)],
 });
 

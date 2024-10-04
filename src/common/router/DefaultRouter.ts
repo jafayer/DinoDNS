@@ -1,6 +1,6 @@
 import { Router, MatchedHandlers } from './router';
 import { domainToRegexp } from '../core/domainToRegexp';
-import { Handler } from '../../server';
+import { Handler } from '../server';
 
 export class DefaultRouter implements Router {
   private handlers: MatchedHandlers[] = [];
