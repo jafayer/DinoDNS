@@ -1,5 +1,5 @@
 import { ConsoleLogger } from './plugins/loggers';
-import { DNSServer } from './common/server';
+import { DefaultServer, DNSServer } from './common/server';
 import { DNSOverTCP, DNSOverUDP } from './common/network';
 import { Handler } from './common/server';
 import { DefaultStore } from './plugins/storage';
@@ -25,7 +25,7 @@ export { DefaultStore, Store } from './plugins/storage';
 export { DefaultRouter, Router } from './common/router';
 
 const logger = new ConsoleLogger(true, true);
-const s = new DNSServer({
+const s = new DefaultServer({
   networks: [new DNSOverTCP('localhost', 1053), new DNSOverUDP('localhost', 1053)],
   defaultHandler: (req, res) => {
     res.errors.nxDomain();

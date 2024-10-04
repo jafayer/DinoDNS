@@ -11,7 +11,7 @@ st.set('*', 'TXT', {
   data: 'Hello, World!',
 });
 
-const s = new server.DNSServer({
+const s = new server.DefaultServer({
   networks: [new network.DNSOverTCP('localhost', 1054), new network.DNSOverUDP('localhost', 1054)],
 });
 
