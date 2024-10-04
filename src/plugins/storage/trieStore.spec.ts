@@ -1,7 +1,7 @@
 import { AnswerTrie } from './DefaultStore';
-import { Answer, StringAnswer } from 'dns-packet';
+import { SupportedAnswer } from '../../types/dns';
 
-const records: Answer[] = [
+const records: SupportedAnswer[] = [
   {
     name: 'example.com',
     type: 'A',
@@ -31,7 +31,7 @@ describe('AnswerTrie', () => {
   });
 
   it('should be able to get data of a specific type', () => {
-    const mx: Answer[] = [
+    const mx: SupportedAnswer[] = [
       {
         name: 'example.com',
         type: 'MX',
@@ -162,7 +162,7 @@ describe('AnswerTrie', () => {
   });
 
   it('Should resolve an exact match before a wildcard match', () => {
-    const specificRecords: Answer[] = [
+    const specificRecords: SupportedAnswer[] = [
       { name: 'test.example.com', type: 'A', class: 'IN', ttl: 300, data: '127.0.0.3' },
     ];
     trie.add(
@@ -178,10 +178,12 @@ describe('AnswerTrie', () => {
     expect(trie.get('another.example.com', 'A')).toEqual(records.map((r) => ({ ...r, name: 'another.example.com' })));
   });
 
-  it('should resolve the leftmost/least specific wildcard first if there are collissions', () => {
-    const leastSpecificWildcard = records.map((r) => ({ ...r, name: '*.example.com', data: '127.0.0.1' }) as Answer);
+  it('should resolve the leftmost/least specific wildcard first if there are collisions', () => {
+    const leastSpecificWildcard = records.map(
+      (r) => ({ ...r, name: '*.example.com', data: '127.0.0.1' }) as SupportedAnswer,
+    );
     const moreSpecificWildcard = records.map(
-      (r) => ({ ...r, name: '*.sub.example.com', data: '.127.0.0.2' }) as Answer,
+      (r) => ({ ...r, name: '*.sub.example.com', data: '.127.0.0.2' }) as SupportedAnswer,
     );
 
     trie.add('*.example.com', 'A', leastSpecificWildcard);

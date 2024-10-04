@@ -1,12 +1,13 @@
 import { Store } from '../Store';
-import { Answer, RecordType } from 'dns-packet';
 import { EventEmitter } from 'events';
 import { DNSRequest, DNSResponse, NextFunction, Handler } from '../../../common/server';
 import { resolveWildcards } from '../../../common/core/domainToRegexp';
+import { RecordType } from 'dns-packet';
+import { SupportedAnswer } from '../../../types/dns';
 
 interface DeserializedTrieData {
   trie: DeserializedTrie;
-  data: [string, Answer[]][];
+  data: [string, SupportedAnswer[]][];
 }
 
 interface DeserializedTrie {
@@ -27,9 +28,9 @@ export class AnswerTrie {
    * It does not narrow the type of the record based on the specific record type. You should not be able, for example,
    * to add a record of type 'A' with an answer that is an MxAnswer.
    */
-  private data: Map<RecordType, Answer[]> = new Map();
+  private data: Map<RecordType, SupportedAnswer[]> = new Map();
 
-  private _insert(labels: string[], rType: RecordType, data: Answer[]) {
+  private _insert(labels: string[], rType: RecordType, data: SupportedAnswer[]) {
     if (labels.length === 0) {
       this.data.set(rType, data);
       return;
@@ -53,11 +54,11 @@ export class AnswerTrie {
     next._insert(rest, rType, data);
   }
 
-  add(domain: string, rType: RecordType, data: Answer[]) {
+  add(domain: string, rType: RecordType, data: SupportedAnswer[]) {
     this._insert(this.domainToLabels(domain), rType, data);
   }
 
-  private _getExact(labels: string[], rType?: RecordType): Answer[] | null {
+  private _getExact(labels: string[], rType?: RecordType): SupportedAnswer[] | null {
     if (labels.length === 0) {
       if (rType) {
         return this.data.get(rType) || null;
@@ -76,7 +77,7 @@ export class AnswerTrie {
     return next._getExact(rest, rType);
   }
 
-  private _get(labels: string[], rType?: RecordType): Answer[] | null {
+  private _get(labels: string[], rType?: RecordType): SupportedAnswer[] | null {
     if (labels.length === 0) {
       if (rType) {
         return this.data.get(rType) || null;
@@ -117,7 +118,7 @@ export class AnswerTrie {
     return next._get(rest, rType);
   }
 
-  get(domain: string, rType?: RecordType): Answer[] | null {
+  get(domain: string, rType?: RecordType): SupportedAnswer[] | null {
     // first try to get the exact match
     const exact = this._getExact(this.domainToLabels(domain), rType);
     if (exact) {
@@ -151,7 +152,7 @@ export class AnswerTrie {
     return this._has(this.domainToLabels(domain));
   }
 
-  private _delete(labels: string[], rType?: RecordType, rData?: Answer) {
+  private _delete(labels: string[], rType?: RecordType, rData?: SupportedAnswer) {
     if (labels.length === 0) {
       if (rType) {
         if (!rData) {
@@ -190,11 +191,11 @@ export class AnswerTrie {
     next._delete(rest, rType, rData);
   }
 
-  delete(domain: string, rType?: RecordType, rData?: Answer) {
+  delete(domain: string, rType?: RecordType, rData?: SupportedAnswer) {
     this._delete(this.domainToLabels(domain), rType, rData);
   }
 
-  append(domain: string, rType: RecordType, data: Answer) {
+  append(domain: string, rType: RecordType, data: SupportedAnswer) {
     const labels = this.domainToLabels(domain);
     const [label, ...rest] = labels;
     let next = this.trie.get(label);
@@ -286,19 +287,19 @@ export class AnswerTrie {
 export class DefaultStore extends EventEmitter implements Store {
   trie: AnswerTrie = new AnswerTrie();
 
-  async get(zone: string, rType?: RecordType): Promise<Answer | Answer[] | null> {
+  async get(zone: string, rType?: RecordType): Promise<SupportedAnswer | SupportedAnswer[] | null> {
     return this.trie.get(zone, rType);
   }
 
-  async set(zone: string, rType: RecordType, data: Answer | Answer[]): Promise<void> {
+  async set(zone: string, rType: RecordType, data: SupportedAnswer | SupportedAnswer[]): Promise<void> {
     this.trie.add(zone, rType, Array.isArray(data) ? data : [data]);
   }
 
-  async append(zone: string, rType: RecordType, data: Answer): Promise<void> {
+  async append(zone: string, rType: RecordType, data: SupportedAnswer): Promise<void> {
     this.trie.append(zone, rType, data);
   }
 
-  async delete(zone: string, rType?: RecordType, rData?: Answer): Promise<void> {
+  async delete(zone: string, rType?: RecordType, rData?: SupportedAnswer): Promise<void> {
     this.trie.delete(zone, rType, rData);
   }
 

@@ -36,7 +36,7 @@ describe('server', () => {
 
     server.handle('example.com', (req, res) => {
       res.packet.answers = [
-        ...res.packet.answers!,
+        ...res.packet.answers,
         {
           type: 'SOA',
           name: 'example.net',
@@ -52,7 +52,7 @@ describe('server', () => {
         },
       ];
       res.packet.answers = [
-        ...res.packet.answers!,
+        ...res.packet.answers,
         {
           type: 'A',
           name: 'example.net',

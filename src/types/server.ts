@@ -3,6 +3,7 @@ import { Connection } from '../common/network';
 import { CanAnswer } from '../common/serializer';
 import { CombineFlags, RCode } from '../common/core/utils';
 import { EventEmitter } from 'events';
+import { SupportedAnswer } from '../types/dns';
 
 export interface NextFunction {
   (err?: Error): void;
@@ -85,22 +86,22 @@ class PacketWrapper {
     this.raw.questions = questions;
   }
 
-  get answers(): ReadonlyArray<dnsPacket.Answer> {
-    return this.raw.answers || [];
+  get answers(): ReadonlyArray<SupportedAnswer> {
+    return (this.raw.answers as ReadonlyArray<SupportedAnswer>) || [];
   }
 
-  set answers(answers: dnsPacket.Answer[]) {
+  set answers(answers: SupportedAnswer[]) {
     if (this.frozen) {
       throw new ModifiedAfterSentError();
     }
     this.raw.answers = answers || [];
   }
 
-  get additionals(): ReadonlyArray<dnsPacket.Answer> {
-    return this.raw.additionals || [];
+  get additionals(): ReadonlyArray<SupportedAnswer> {
+    return (this.raw.additionals || []) as ReadonlyArray<SupportedAnswer>;
   }
 
-  set additionals(additionals: dnsPacket.Answer[]) {
+  set additionals(additionals: SupportedAnswer[]) {
     if (this.frozen) {
       throw new ModifiedAfterSentError();
     }
@@ -152,7 +153,7 @@ export class DNSResponse extends EventEmitter {
     return this.fin;
   }
 
-  answer(answer: dnsPacket.Answer | dnsPacket.Answer[]): void {
+  answer(answer: SupportedAnswer | SupportedAnswer[]): void {
     if (this.fin) {
       throw new DuplicateAnswerForRequest();
     }
