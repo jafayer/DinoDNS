@@ -1,5 +1,5 @@
 import { HandlerMatch } from '../core/domainToRegexp';
-import { Handler } from '../../server';
+import { Handler } from '../server';
 
 /**
  * A helper object interface used to resolve domain matches to handlers defined at their location.

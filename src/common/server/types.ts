@@ -1,7 +1,7 @@
 import dnsPacket from 'dns-packet';
-import { Connection } from '../common/network';
-import { CanAnswer } from '../common/serializer';
-import { CombineFlags, RCode } from '../common/core/utils';
+import { Connection } from '../network';
+import { CanAnswer } from '../serializer';
+import { CombineFlags, RCode } from '../core/utils';
 import { EventEmitter } from 'events';
 
 export interface NextFunction {

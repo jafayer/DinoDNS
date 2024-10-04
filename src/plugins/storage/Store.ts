@@ -1,4 +1,4 @@
-import { Handler } from '../../server';
+import { Handler } from '../../common/server';
 import { Answer, RecordType } from 'dns-packet';
 
 export abstract class Store {

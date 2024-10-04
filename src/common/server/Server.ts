@@ -1,7 +1,7 @@
 import { DNSRequest, DNSResponse, NextFunction } from './types';
-import { Network } from '../common/network';
+import { Network } from '../network';
 import { Handler } from './types';
-import { DefaultRouter, Router } from '../common/router';
+import { DefaultRouter, Router } from '../router';
 import dnsPacket from 'dns-packet';
 
 export interface Server<PacketType> {

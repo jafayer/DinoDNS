@@ -1,5 +1,5 @@
 import type { Serializer } from '../serializer';
-import type { DNSResponse } from '../../server';
+import type { DNSResponse } from '../server';
 
 export interface NetworkHandler<T> {
   (data: T, connection: Connection): Promise<DNSResponse>;

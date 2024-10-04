@@ -1,7 +1,7 @@
 import { Store } from '../Store';
 import { Answer, RecordType } from 'dns-packet';
 import { EventEmitter } from 'events';
-import { DNSRequest, DNSResponse, NextFunction, Handler } from '../../../server';
+import { DNSRequest, DNSResponse, NextFunction, Handler } from '../../../common/server';
 import { resolveWildcards } from "../../../common/core/domainToRegexp";
 
 interface DeserializedTrieData {
