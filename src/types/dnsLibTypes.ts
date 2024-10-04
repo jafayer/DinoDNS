@@ -16,6 +16,8 @@ import type {
   DnskeyData,
   StringRecordType,
   OtherRecordType,
+  Answer,
+  OptAnswer,
 } from 'dns-packet';
 
 /**
@@ -44,3 +46,6 @@ export type ZoneData = {
   TLSA: TlsaData;
   TXT: TxtData;
 };
+
+export type SupportedAnswer = Exclude<Answer, OptAnswer>;
+export type SupportedRecordType = keyof ZoneData;

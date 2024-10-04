@@ -118,7 +118,6 @@ export class AnswerTrie {
   }
 
   get(domain: string, rType?: RecordType): Answer[] | null {
-
     // first try to get the exact match
     const exact = this._getExact(this.domainToLabels(domain), rType);
     if (exact) {

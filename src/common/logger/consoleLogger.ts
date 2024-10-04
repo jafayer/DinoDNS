@@ -10,9 +10,9 @@ export class ConsoleLogger implements Logger {
 
   register(res: DNSResponse): void {
     res.once('done', () => {
-      if (res.packet.answers!.length > 0) {
+      if (res.packet.answers.length > 0) {
         console.log(
-          `[ANSWER] ${res.packet.answers![0].name} ${res.packet.answers![0].type} ${JSON.stringify((res.packet.answers![0] as dnsPacket.StringAnswer).data)} (took ${Date.now() - res.connection.ts}ms)`,
+          `[ANSWER] ${res.packet.answers[0].name} ${res.packet.answers[0].type} ${JSON.stringify(res.packet.answers[0].data)} (took ${Date.now() - res.connection.ts}ms)`,
         );
       }
     });

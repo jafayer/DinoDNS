@@ -110,7 +110,7 @@ s.use(store.handler);
 
 s.handle('example.net', (req, res) => {
   res.packet.answers = [
-    ...res.packet.answers!,
+    ...res.packet.answers,
     {
       type: 'SOA',
       name: 'example.net',
@@ -126,7 +126,7 @@ s.handle('example.net', (req, res) => {
     },
   ];
   res.packet.answers = [
-    ...res.packet.answers!,
+    ...res.packet.answers,
     {
       type: 'A',
       name: 'example.net',
