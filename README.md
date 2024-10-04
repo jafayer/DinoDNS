@@ -69,6 +69,12 @@ server.start(() => {
 });
 ```
 
+## Unsupported features
+
+### Answer types
+
+* OPT answers are currently unsupported
+
 # Roadmap
 
 - [ ] Full documentation site up
