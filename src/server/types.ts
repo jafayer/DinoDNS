@@ -1,6 +1,6 @@
 import dnsPacket from 'dns-packet';
 import { Connection } from '../common/network';
-import { CanAnswer } from '../common/serializers';
+import { CanAnswer } from '../common/serializer';
 import { CombineFlags, RCode } from '../common/core/utils';
 import { EventEmitter } from 'events';
 
