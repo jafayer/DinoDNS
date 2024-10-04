@@ -1,11 +1,11 @@
-import { ConsoleLogger } from './common/logger';
+import { ConsoleLogger } from './plugins/loggers';
 import { DNSServer } from './server';
 import { DNSOverTCP, DNSOverUDP } from './common/network';
 import { Handler } from './server';
 import { TrieStore } from './common/store';
 
 export * as network from './common/network';
-export * as logging from './common/logger';
+export * as logging from './plugins/loggers';
 export * as server from './server';
 export * as store from './common/store';
 
@@ -19,7 +19,7 @@ export {
   TCPSerializer,
   UDPSerializer,
 } from './common/network';
-export { ConsoleLogger, Logger } from './common/logger';
+export { ConsoleLogger, Logger } from './plugins/loggers';
 export { DNSServer, DNSRequest, DNSResponse, Handler, NextFunction } from './server';
 export { TrieStore, Store } from './common/store';
 export { DefaultRouter, Router } from './common/router';
