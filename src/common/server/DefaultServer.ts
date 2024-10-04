@@ -1,6 +1,6 @@
-import { DNSRequest, DNSResponse, NextFunction } from './types';
+import { DNSRequest, DNSResponse, NextFunction } from '../../types/server';
 import { Network } from '../network';
-import { Handler } from './types';
+import { Handler } from '../../types/server';
 import { DefaultRouter, Router } from '../router';
 import dnsPacket from 'dns-packet';
 
