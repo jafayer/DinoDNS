@@ -18,13 +18,3 @@ export interface Serializer<T> {
 export interface CanAnswer<T> {
   toAnswer(): T;
 }
-
-export class DNSPacketSerializer implements Serializer<dnsPacket.Packet> {
-  encode(packet: dnsPacket.Packet): Buffer {
-    return dnsPacket.encode(packet);
-  }
-
-  decode(buffer: Buffer): dnsPacket.Packet {
-    return dnsPacket.decode(buffer);
-  }
-}
