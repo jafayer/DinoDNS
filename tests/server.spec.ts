@@ -1,18 +1,18 @@
-import { DNSServer } from '../src/server';
+import { DefaultServer } from '../src/common/server';
 import { DNSOverTCP, DNSOverUDP } from '../src/common/network';
-import { TrieStore } from '../src/common/store';
+import { DefaultStore } from '../src/plugins/storage';
 import dns from 'node:dns';
 
 describe('server', () => {
   it('Should throw an error when it tries to respond twice to the same request', async () => {
-    const server = new DNSServer({
+    const server = new DefaultServer({
       networks: [new DNSOverTCP('localhost', 8053), new DNSOverUDP('localhost', 8053)],
       defaultHandler: (req, res) => {
         res.errors.nxDomain();
       },
     });
 
-    const store = new TrieStore();
+    const store = new DefaultStore();
     store.set('example.com', 'A', {
       name: 'example.com',
       type: 'A',
