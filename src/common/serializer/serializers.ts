@@ -1,5 +1,3 @@
-import dnsPacket from 'dns-packet';
-
 /**
  * Generic serializer for encoding and decoding DNS messages.
  *

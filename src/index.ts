@@ -1,5 +1,5 @@
 import { ConsoleLogger } from './plugins/loggers';
-import { DefaultServer, DNSServer } from './common/server';
+import { DefaultServer } from './common/server';
 import { DNSOverTCP, DNSOverUDP } from './common/network';
 import { Handler } from './common/server';
 import { DefaultStore } from './plugins/storage';
