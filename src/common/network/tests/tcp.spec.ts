@@ -1,18 +1,17 @@
-import { UDPSerializer } from './udp';
+import { TCPSerializer } from '../tcp';
 import dnsPacket from 'dns-packet';
 
-describe('UDPSerializer', () => {
+describe('TCPSerializer', () => {
+  let tcpSerializer: TCPSerializer;
   const queryPacket = Buffer.from(
-    '\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07example\x03com\x00\x00\x01\x00\x01',
+    '\x00\x1D\x00\x01\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07example\x03com\x00\x00\x01\x00\x01',
   );
-  let udpSerializer: UDPSerializer;
-
   beforeEach(() => {
-    udpSerializer = new UDPSerializer();
+    tcpSerializer = new TCPSerializer();
   });
 
   it('Should be able to parse incoming queries', () => {
-    const query = udpSerializer.decode(queryPacket);
+    const query = tcpSerializer.decode(queryPacket);
 
     expect(query.id).toBe(1);
     expect(query.questions!.length).toBe(1);
@@ -32,7 +31,7 @@ describe('UDPSerializer', () => {
         },
       ],
     };
-    const packet = udpSerializer.encode(query);
+    const packet = tcpSerializer.encode(query);
 
     expect(packet).toEqual(queryPacket);
   });

@@ -1,4 +1,4 @@
-import { resolveWildcards } from './domainToRegexp';
+import { resolveWildcards } from '../domainToRegexp';
 
 describe('resolveWildcards', () => {
   test('replaces single wildcard', () => {
