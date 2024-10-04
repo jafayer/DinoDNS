@@ -2,7 +2,7 @@ import { server, network, store, logging } from '../..';
 
 const logger = new logging.ConsoleLogger(true, true);
 
-const st = new store.TrieStore();
+const st = new store.DefaultStore();
 st.set('*', 'TXT', {
   name: 'example.com',
   type: 'TXT',

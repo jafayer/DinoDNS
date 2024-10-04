@@ -1,8 +1,8 @@
-import { Store } from './Store';
+import { Store } from '../Store';
 import { Answer, RecordType } from 'dns-packet';
 import { EventEmitter } from 'events';
-import { DNSRequest, DNSResponse, NextFunction, Handler } from '../../server';
-import { resolveWildcards } from '../core/domainToRegexp';
+import { DNSRequest, DNSResponse, NextFunction, Handler } from '../../../server';
+import { resolveWildcards } from "../../../common/core/domainToRegexp";
 
 interface DeserializedTrieData {
   trie: DeserializedTrie;
@@ -284,7 +284,7 @@ export class AnswerTrie {
 /**
  * A simple in-memory store for storing DNS records.
  */
-export class TrieStore extends EventEmitter implements Store {
+export class DefaultStore extends EventEmitter implements Store {
   trie: AnswerTrie = new AnswerTrie();
 
   async get(zone: string, rType?: RecordType): Promise<Answer | Answer[] | null> {

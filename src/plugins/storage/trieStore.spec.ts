@@ -1,4 +1,4 @@
-import { AnswerTrie } from './trieStore';
+import { AnswerTrie } from './DefaultStore';
 import { Answer, StringAnswer } from 'dns-packet';
 
 const records: Answer[] = [
