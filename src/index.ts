@@ -9,6 +9,8 @@ export * as logging from './common/logger';
 export * as server from './server';
 export * as store from './common/store';
 
+export { SupportedAnswer } from './types/dnsLibTypes';
+
 export {
   DNSOverTCP,
   DNSOverUDP,

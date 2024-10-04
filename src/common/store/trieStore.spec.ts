@@ -1,5 +1,4 @@
 import { AnswerTrie } from './trieStore';
-import { Answer, StringAnswer } from 'dns-packet';
 import { SupportedAnswer } from '../../types/dnsLibTypes';
 
 const records: SupportedAnswer[] = [
@@ -179,8 +178,10 @@ describe('AnswerTrie', () => {
     expect(trie.get('another.example.com', 'A')).toEqual(records.map((r) => ({ ...r, name: 'another.example.com' })));
   });
 
-  it('should resolve the leftmost/least specific wildcard first if there are collissions', () => {
-    const leastSpecificWildcard = records.map((r) => ({ ...r, name: '*.example.com', data: '127.0.0.1' }) as SupportedAnswer);
+  it('should resolve the leftmost/least specific wildcard first if there are collisions', () => {
+    const leastSpecificWildcard = records.map(
+      (r) => ({ ...r, name: '*.example.com', data: '127.0.0.1' }) as SupportedAnswer,
+    );
     const moreSpecificWildcard = records.map(
       (r) => ({ ...r, name: '*.sub.example.com', data: '.127.0.0.2' }) as SupportedAnswer,
     );

@@ -1,6 +1,5 @@
 import { Logger, LogLevel } from './logger';
 import { DNSRequest, DNSResponse, NextFunction } from '../../server';
-import dnsPacket from 'dns-packet';
 
 export class ConsoleLogger implements Logger {
   constructor(
