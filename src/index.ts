@@ -9,6 +9,8 @@ export * as logging from './common/logger';
 export * as server from './server';
 export * as store from './common/store';
 
+export { SupportedAnswer } from './types/dnsLibTypes';
+
 export {
   DNSOverTCP,
   DNSOverUDP,
@@ -110,7 +112,7 @@ s.use(store.handler);
 
 s.handle('example.net', (req, res) => {
   res.packet.answers = [
-    ...res.packet.answers!,
+    ...res.packet.answers,
     {
       type: 'SOA',
       name: 'example.net',
@@ -126,7 +128,7 @@ s.handle('example.net', (req, res) => {
     },
   ];
   res.packet.answers = [
-    ...res.packet.answers!,
+    ...res.packet.answers,
     {
       type: 'A',
       name: 'example.net',
