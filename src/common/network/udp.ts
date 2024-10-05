@@ -48,12 +48,12 @@ export class DNSOverUDP implements Network<dnsPacket.Packet> {
 
       const packet = this.serializer.decode(msg);
       this.handler(packet, this.toConnection(rinfo))
-      .then((resp) => {
-        this.server.send(new Uint8Array(this.serializer.encode(resp.packet.raw)), rinfo.port, rinfo.address);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+        .then((resp) => {
+          this.server.send(new Uint8Array(this.serializer.encode(resp.packet.raw)), rinfo.port, rinfo.address);
+        })
+        .catch((err) => {
+          console.error(err);
+        });
     });
 
     this.server.on('error', (err) => {

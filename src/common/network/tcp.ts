@@ -41,14 +41,14 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
         }
         const packet = dnsPacket.streamDecode(data);
         this.handler(packet, this.toConnection(socket))
-        .then((resp) => {
-          socket.write(new Uint8Array(this.serializer.encode(resp.packet.raw)));
-          socket.end();
-        })
-        .catch((err) => {
-          console.error(err);
-          socket.end();
-        });
+          .then((resp) => {
+            socket.write(new Uint8Array(this.serializer.encode(resp.packet.raw)));
+            socket.end();
+          })
+          .catch((err) => {
+            console.error(err);
+            socket.end();
+          });
       });
 
       socket.on('error', (err) => {
