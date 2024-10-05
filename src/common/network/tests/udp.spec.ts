@@ -72,9 +72,12 @@ describe('UDPSerializer', () => {
 
     // get the flags from the buffer using an offset
     const flags = response.readUInt16BE(2);
-    console.log(flags, TRUNCATED_RESPONSE);
 
     // check if the truncated flag is set
     expect(flags & TRUNCATED_RESPONSE).toBe(TRUNCATED_RESPONSE);
+
+    const decoded = udpSerializer.decode(response) as dnsPacket.DecodedPacket;
+
+    expect(decoded.flag_tc).toBe(true);
   });
 });
