@@ -1,5 +1,6 @@
 import { Logger, LogLevel } from '../logger';
 import { DNSRequest, DNSResponse, NextFunction } from '../../../common/server';
+import { RCode } from '../../../common/core/utils';
 
 export class ConsoleLogger implements Logger {
   constructor(
@@ -9,16 +10,21 @@ export class ConsoleLogger implements Logger {
 
   register(res: DNSResponse): void {
     res.once('done', () => {
+      if((res.packet.flags & 0x000F) !== RCode.NO_ERROR){
+        this.error(
+          `[ANSWER] <${RCode[res.packet.flags & 0x000F]}> ${res.packet.questions![0].name} ${res.packet.questions![0].type} (took ${Date.now() - res.connection.ts}ms)`
+        );
+      }
       if (res.packet.answers.length > 0) {
-        console.log(
-          `[ANSWER] ${res.packet.answers[0].name} ${res.packet.answers[0].type} ${JSON.stringify(res.packet.answers[0].data)} (took ${Date.now() - res.connection.ts}ms)`,
+        this.debug(
+          `[ANSWER] <${RCode[res.packet.flags & 0x000F]}> ${res.packet.answers[0].name} ${res.packet.answers[0].type} ${JSON.stringify(res.packet.answers[0].data)} (took ${Date.now() - res.connection.ts}ms)`,
         );
       }
     });
   }
   handler(req: DNSRequest, res: DNSResponse, next: NextFunction): void {
     if (this.logRequests) {
-      console.log(
+      this.debug(
         `[QUESTION] ${req.packet.questions![0].name} ${req.packet.questions![0].type} ${req.connection.remoteAddress}`,
       );
     }
@@ -66,6 +72,6 @@ export class ConsoleLogger implements Logger {
   }
 
   private format(level: LogLevel, message: string): string {
-    return `[${level}] ${message}`;
+    return `[${level}]\t ${message}`;
   }
 }
