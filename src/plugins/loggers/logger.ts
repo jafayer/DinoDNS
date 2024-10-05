@@ -1,8 +1,8 @@
-import { Handler } from "../../types/server";
+import { Handler } from '../../types/server';
 
 export interface Logger {
   log(level: string, message: string): void;
-  handler: Handler
+  handler: Handler;
 }
 
 export enum LogLevel {
