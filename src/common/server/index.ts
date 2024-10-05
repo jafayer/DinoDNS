@@ -1,2 +1,2 @@
-export { DNSServer, DefaultServer } from './DefaultServer';
+export { DNSServer, DefaultServer, DefaultServerProps } from './DefaultServer';
 export { DNSRequest, DNSResponse, Handler, NextFunction } from '../../types/server';

@@ -16,7 +16,7 @@ export interface DNSServer<PacketType> {
   stop(): void;
 }
 
-type DefaultServerProps<PacketType> = {
+export type DefaultServerProps<PacketType> = {
   /** Defines one or more network interfaces for the DNS Server */
   networks: Network<PacketType>[];
 
