@@ -1,7 +1,6 @@
 import { UDPSerializer } from '../udp';
 import dnsPacket from 'dns-packet';
 import { TRUNCATED_RESPONSE } from 'dns-packet';
-import { HasFlag } from '../../core/utils';
 
 describe('UDPSerializer', () => {
   const queryPacket = Buffer.from(

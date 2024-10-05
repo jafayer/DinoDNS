@@ -2,7 +2,7 @@ import { Network, NetworkHandler, SupportedNetworkType, Connection } from './net
 import { Serializer } from '../serializer';
 import dgram from 'dgram';
 import dnsPacket, { TRUNCATED_RESPONSE } from 'dns-packet';
-import { RCode, CombineFlags, HasFlag } from '../core/utils';
+import { RCode, CombineFlags } from '../core/utils';
 
 export class UDPSerializer implements Serializer<dnsPacket.Packet> {
   encode(packet: dnsPacket.Packet): Buffer {
