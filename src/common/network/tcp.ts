@@ -40,8 +40,20 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
           throw new Error('No handler defined for DNSOverTCP');
         }
         const packet = dnsPacket.streamDecode(data);
-        const resp = await this.handler(packet, this.toConnection(socket));
-        socket.write(new Uint8Array(this.serializer.encode(resp.packet.raw)));
+        this.handler(packet, this.toConnection(socket))
+        .then((resp) => {
+          socket.write(new Uint8Array(this.serializer.encode(resp.packet.raw)));
+          socket.end();
+        })
+        .catch((err) => {
+          console.error(err);
+          socket.end();
+        });
+      });
+
+      socket.on('error', (err) => {
+        console.error(err);
+        socket.end();
       });
 
       socket.on('end', () => {
