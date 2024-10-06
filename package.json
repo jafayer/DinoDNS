@@ -36,7 +36,7 @@
     "format:check": "prettier --check .",
     "prepublishOnly": "npm run build:clean",
     "postpublish": "git push --follow-tags",
-    "publish": "cp package.json dist/package.json && cd dist && npm publish",
+    "release": "cp package.json dist/package.json && cd dist && npm publish",
     "package": "npm run build:clean && cp package.json dist/package.json && cd dist && npm pack"
   },
   "license": "ISC",
