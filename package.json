@@ -2,11 +2,8 @@
   "name": "dinodns",
   "version": "0.0.6",
   "description": "A pure Typescript, low-configuration full DNS server",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "main": "index.js",
+  "types": "index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jafayer/DinoDNS.git"
@@ -39,7 +36,8 @@
     "format:check": "prettier --check .",
     "prepublishOnly": "npm run build:clean",
     "postpublish": "git push --follow-tags",
-    "publish": "npm publish"
+    "publish": "cp package.json dist/package.json && cd dist && npm publish",
+    "package": "npm run build:clean && cp package.json dist/package.json && cd dist && npm pack"
   },
   "license": "ISC",
   "devDependencies": {
