@@ -282,29 +282,40 @@ export class AnswerTrie {
   }
 }
 
-export class DefaultStore implements Store {
+export type DefaultStoreProps = {
+  shouldCache?: boolean;
+}
+
+export class DefaultStore extends EventEmitter implements Store {
+  private shouldCache: boolean;
   trie: Trie<SupportedRecordType, ZoneData> = new Trie();
 
-  async get(
-    zone: string,
-    rType?: SupportedRecordType,
-  ): Promise<ZoneData[keyof ZoneData] | ZoneData[keyof ZoneData][] | null> {
-    return this.trie.get(zone, rType);
+  constructor(props?: DefaultStoreProps) {
+    super();
+
+    this.shouldCache = props?.shouldCache ?? false;
   }
 
-  async set(
+  async get<T extends SupportedRecordType>(
     zone: string,
-    rType: SupportedRecordType,
-    data: ZoneData[keyof ZoneData] | ZoneData[keyof ZoneData][],
+    rType?: T,
+  ): Promise<ZoneData[T][] | null> {
+    return this.trie.get(zone, rType) as ZoneData[T][] | null;
+  }
+
+  async set<T extends SupportedRecordType>(
+    zone: string,
+    rType: T,
+    data: ZoneData[T] | ZoneData[T][],
   ): Promise<void> {
     this.trie.add(zone, rType, data);
   }
 
-  async append(zone: string, rType: SupportedRecordType, data: ZoneData[keyof ZoneData]): Promise<void> {
+  async append<T extends SupportedRecordType>(zone: string, rType: T, data: ZoneData[T]): Promise<void> {
     this.trie.append(zone, rType, data);
   }
 
-  async delete(zone: string, rType?: SupportedRecordType, rData?: ZoneData[keyof ZoneData]): Promise<void> {
+  async delete<T extends SupportedRecordType>(zone: string, rType?: T, rData?: ZoneData[T]): Promise<void> {
     this.trie.delete(zone, rType, rData);
   }
 
@@ -324,11 +335,17 @@ export class DefaultStore implements Store {
 
     if (answers && answers.length > 0) {
       res.answer(answers);
-      // this.emit('cacheRequest', {
-      //     zoneName: this.trie.resolve(name),
-      //     recordType: type,
-      //     records: records
-      // });
+      if(this.shouldCache) {
+        this.emitCacheRequest(name, type, records as ZoneData[SupportedRecordType]);
+      }
     }
+  }
+
+  async emitCacheRequest<T extends SupportedRecordType>(zone: string, rType: T, records: ZoneData[T]) {
+    this.emit('cacheRequest', {
+      zoneName: zone,
+      recordType: rType,
+      records: records
+    });
   }
 }

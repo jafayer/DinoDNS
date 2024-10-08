@@ -80,7 +80,7 @@ const block: (list: string[]) => Handler = (blockList: string[]): Handler => {
 s.use(logger.handler.bind(logger));
 
 s.use(block(['example.dev']));
-s.use(store.handler);
+s.use(store.handler.bind(store));
 // s.use(forward);
 
 s.handle('example.net', (req, res) => {
