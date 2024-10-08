@@ -1,20 +1,24 @@
-import { resolveWildcards } from './domainToRegexp';
+import { SupportedRecordType, ZoneData } from "../../types/dns";
 
-interface DeserializedTrieData<T> {
-  trie: DeserializedTrie<T>;
-  data: [string, T[]][];
+interface DeserializedTrieData<K extends keyof T, T> {
+  trie: DeserializedTrie<K, T>;
+  data: [K, T[K][]][];
 }
 
-interface DeserializedTrie<T> {
-  [key: string]: DeserializedTrieData<T>;
+interface DeserializedTrie<K extends keyof T, T> {
+  [key: string]: DeserializedTrieData<K, T>;
 }
 
-export class Trie<K, T> {
+export class Trie<K extends keyof T, T> {
   private trie: Map<string, Trie<K, T>> = new Map();
 
-  private data: Map<K, T[]> = new Map();
+  private data: Map<K, T[K][]> = new Map();
 
-  private _insert(labels: string[], rType: K, data: T[]) {
+  private _insert(labels: string[], rType: K, data: T[K] | T[K][]) {
+    if (!Array.isArray(data)) {
+      data = [data];
+    }
+
     if (labels.length === 0) {
       this.data.set(rType, data);
       return;
@@ -38,14 +42,11 @@ export class Trie<K, T> {
     next._insert(rest, rType, data);
   }
 
-  add(domain: string, rType: K, data: T | T[]) {
-    if (!Array.isArray(data)) {
-      data = [data];
-    }
+  add(domain: string, rType: K, data: T[K] | T[K][]) {
     this._insert(this.domainToLabels(domain), rType, data);
   }
 
-  private _getExact(labels: string[], rType?: K): T[] | null {
+  private _getExact(labels: string[], rType?: K): T[K][] | null {
     if (labels.length === 0) {
       if (rType) {
         return this.data.get(rType) || null;
@@ -64,7 +65,7 @@ export class Trie<K, T> {
     return next._getExact(rest, rType);
   }
 
-  private _get(labels: string[], rType?: K): T[] | null {
+  private _get(labels: string[], rType?: K): T[keyof T][] | T[K][] | null {
     if (labels.length === 0) {
       if (rType) {
         return this.data.get(rType) || null;
@@ -95,7 +96,7 @@ export class Trie<K, T> {
     return next._get(rest, rType);
   }
 
-  get(domain: string, rType?: K): T[] | null {
+  get(domain: string, rType?: K): T[keyof T][] | T[K][] | null {
     // first try to get the exact match
     const exact = this._getExact(this.domainToLabels(domain), rType);
     if (exact) {
@@ -129,7 +130,7 @@ export class Trie<K, T> {
     return this._has(this.domainToLabels(domain));
   }
 
-  private _delete(labels: string[], rType?: K, rData?: T) {
+  private _delete(labels: string[], rType?: K, rData?: T[K]) {
     if (labels.length === 0) {
       if (rType) {
         if (!rData) {
@@ -168,11 +169,11 @@ export class Trie<K, T> {
     next._delete(rest, rType, rData);
   }
 
-  delete(domain: string, rType?: K, rData?: T) {
+  delete(domain: string, rType?: K, rData?: T[K]) {
     this._delete(this.domainToLabels(domain), rType, rData);
   }
 
-  append(domain: string, rType: K, data: T) {
+  append(domain: string, rType: K, data: T[K]) {
     const labels = this.domainToLabels(domain);
     const [label, ...rest] = labels;
     let next = this.trie.get(label);
@@ -234,25 +235,25 @@ export class Trie<K, T> {
     return JSON.stringify(obj);
   }
 
-  private deserializeTrie(obj: DeserializedTrie<T>) {
+  private deserializeTrie(obj: DeserializedTrie<K, T>) {
     for (const [key, value] of Object.entries(obj)) {
-      const trie = new Trie<K,T>();
+      const trie = new Trie<K, T>();
       trie.deserializeTrie(value.trie);
       this.trie.set(key, trie);
 
       for (const [rType, data] of value.data) {
-        trie.data.set(rType as K, data);
+        this.data.set(rType, data);
       }
     }
   }
 
-  static fromString<K,T>(str: string): Trie<K,T> {
-    const obj = JSON.parse(str) as DeserializedTrie<T>;
-    const trie = new Trie<K,T>();
+  static fromString<K extends keyof T, T>(str: string): Trie<K, T> {
+    const obj = JSON.parse(str) as DeserializedTrie<K, T>;
+    const trie = new Trie<K, T>();
     trie.deserializeTrie(obj);
     return trie;
   }
-  
+
   private domainToLabels(domain: string): string[] {
     return domain.split('.').reverse();
   }
