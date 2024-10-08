@@ -15,7 +15,7 @@ describe('server', () => {
     const store = new DefaultStore();
     store.set('example.com', 'A', '127.0.0.1');
 
-    store.set('example.com', 'MX', {exchange: 'mail.example.com', preference: 10});
+    store.set('example.com', 'MX', { exchange: 'mail.example.com', preference: 10 });
 
     server.use(store.handler);
 
