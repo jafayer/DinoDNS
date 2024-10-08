@@ -17,7 +17,7 @@ describe('server', () => {
 
     store.set('example.com', 'MX', {exchange: 'mail.example.com', preference: 10});
 
-    server.use(store.handler);
+    server.use(store.handler.bind(store));
 
     server.handle('example.com', (req, res) => {
       res.packet.answers = [
