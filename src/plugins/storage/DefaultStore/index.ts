@@ -294,6 +294,7 @@ export class DefaultStore extends EventEmitter implements Store {
     super();
 
     this.shouldCache = props?.shouldCache ?? false;
+    this.handler = this.handler.bind(this);
   }
 
   async get(zone: string): Promise<ZoneData[keyof ZoneData][] | null>;
