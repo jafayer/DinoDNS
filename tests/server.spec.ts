@@ -13,24 +13,9 @@ describe('server', () => {
     });
 
     const store = new DefaultStore();
-    store.set('example.com', 'A', {
-      name: 'example.com',
-      type: 'A',
-      class: 'IN',
-      ttl: 300,
-      data: '127.0.0.1',
-    });
+    store.set('example.com', 'A', '127.0.0.1');
 
-    store.set('example.com', 'MX', {
-      name: 'example.com',
-      type: 'MX',
-      class: 'IN',
-      ttl: 300,
-      data: {
-        preference: 10,
-        exchange: 'mail.example.com',
-      },
-    });
+    store.set('example.com', 'MX', {exchange: 'mail.example.com', preference: 10});
 
     server.use(store.handler);
 
