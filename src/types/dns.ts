@@ -18,6 +18,8 @@ import type {
   OtherRecordType,
   Answer,
   OptAnswer,
+  RecordType,
+  Question,
 } from 'dns-packet';
 
 /**
@@ -48,3 +50,5 @@ export type ZoneData = {
 };
 
 export type SupportedAnswer = Exclude<Answer, OptAnswer>;
+export type SupportedRecordType = Exclude<RecordType, 'OPT'>;
+export type SupportedQuestion = Question & { type: SupportedRecordType };

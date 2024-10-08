@@ -35,40 +35,13 @@ const s = new DefaultServer({
 });
 
 const store = new DefaultStore();
-store.set('example.com', 'A', {
-  name: 'example.com',
-  type: 'A',
-  class: 'IN',
-  ttl: 300,
-  data: '127.0.0.1',
-});
+store.set('example.com', 'A', '127.0.0.1');
 
-store.set('example.com', 'MX', {
-  name: 'example.com',
-  type: 'MX',
-  class: 'IN',
-  ttl: 300,
-  data: {
-    preference: 10,
-    exchange: 'mail.example.com',
-  },
-});
+store.set('example.com', 'MX', { exchange: 'mail.example.com', preference: 10 });
 
-store.set('example.net', 'A', {
-  name: 'example.net',
-  type: 'A',
-  class: 'IN',
-  ttl: 300,
-  data: '127.0.0.1',
-});
+store.set('example.net', 'A', '127.0.0.1');
 
-store.set('*.example.com', 'A', {
-  name: '*.example.com',
-  type: 'A',
-  class: 'IN',
-  ttl: 300,
-  data: '127.0.0.2',
-});
+store.set('*.example.com', 'A', '127.0.0.2');
 
 const block: (list: string[]) => Handler = (blockList: string[]): Handler => {
   return async (req, res, next) => {
@@ -107,7 +80,7 @@ const block: (list: string[]) => Handler = (blockList: string[]): Handler => {
 s.use(logger.handler.bind(logger));
 
 s.use(block(['example.dev']));
-s.use(store.handler);
+s.use(store.handler.bind(store));
 // s.use(forward);
 
 s.handle('example.net', (req, res) => {

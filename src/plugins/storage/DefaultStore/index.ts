@@ -1,9 +1,10 @@
 import { Store } from '../Store';
 import { EventEmitter } from 'events';
-import { DNSRequest, DNSResponse, NextFunction, Handler } from '../../../common/server';
+import { DNSRequest, DNSResponse, NextFunction } from '../../../common/server';
 import { resolveWildcards } from '../../../common/core/domainToRegexp';
 import { RecordType } from 'dns-packet';
-import { SupportedAnswer } from '../../../types/dns';
+import { SupportedAnswer, SupportedRecordType, ZoneData } from '../../../types/dns';
+import { Trie } from '../../../common/core/trie';
 
 interface DeserializedTrieData {
   trie: DeserializedTrie;
@@ -281,43 +282,80 @@ export class AnswerTrie {
   }
 }
 
-/**
- * A simple in-memory store for storing DNS records.
- */
+export type DefaultStoreProps = {
+  shouldCache?: boolean;
+};
+
 export class DefaultStore extends EventEmitter implements Store {
-  trie: AnswerTrie = new AnswerTrie();
+  private shouldCache: boolean;
+  trie: Trie<ZoneData> = new Trie();
 
-  async get(zone: string, rType?: RecordType): Promise<SupportedAnswer | SupportedAnswer[] | null> {
-    return this.trie.get(zone, rType);
+  constructor(props?: DefaultStoreProps) {
+    super();
+
+    this.shouldCache = props?.shouldCache ?? false;
+    this.handler = this.handler.bind(this);
   }
 
-  async set(zone: string, rType: RecordType, data: SupportedAnswer | SupportedAnswer[]): Promise<void> {
-    this.trie.add(zone, rType, Array.isArray(data) ? data : [data]);
+  async get(zone: string): Promise<ZoneData[keyof ZoneData][] | null>;
+  async get<T extends SupportedRecordType>(zone: string, rType: T): Promise<ZoneData[T][] | null>;
+  async get<T extends SupportedRecordType>(
+    zone: string,
+    rType?: T,
+  ): Promise<ZoneData[T][] | ZoneData[keyof ZoneData][] | null> {
+    if (rType) {
+      return this.trie.get(zone, rType) as ZoneData[T][] | null;
+    }
+
+    const results = this.trie.get(zone);
+    if (!results) {
+      return null;
+    }
+
+    return results as ZoneData[keyof ZoneData][];
   }
 
-  async append(zone: string, rType: RecordType, data: SupportedAnswer): Promise<void> {
+  async set<T extends SupportedRecordType>(zone: string, rType: T, data: ZoneData[T] | ZoneData[T][]): Promise<void> {
+    this.trie.add(zone, rType, data);
+  }
+
+  async append<T extends SupportedRecordType>(zone: string, rType: T, data: ZoneData[T]): Promise<void> {
     this.trie.append(zone, rType, data);
   }
 
-  async delete(zone: string, rType?: RecordType, rData?: SupportedAnswer): Promise<void> {
+  async delete<T extends SupportedRecordType>(zone: string, rType?: T, rData?: ZoneData[T]): Promise<void> {
     this.trie.delete(zone, rType, rData);
   }
 
-  handler: Handler = async (req: DNSRequest, res: DNSResponse, next: NextFunction) => {
+  async handler(req: DNSRequest, res: DNSResponse, next: NextFunction) {
     const { questions } = req.packet;
     const { name, type } = questions![0];
 
     const records = this.trie.get(name, type);
 
-    if (records && records.length > 0) {
-      res.answer(records);
-      // this.emit('cacheRequest', {
-      //     zoneName: this.trie.resolve(name),
-      //     recordType: type,
-      //     records: records
-      // });
+    const answers: SupportedAnswer[] | undefined = records?.map((record) => {
+      return {
+        name,
+        type,
+        data: record,
+      } as SupportedAnswer;
+    });
+
+    if (answers && answers.length > 0) {
+      res.answer(answers);
+      if (this.shouldCache) {
+        this.emitCacheRequest(name, type, records as ZoneData[SupportedRecordType]);
+      }
     }
 
     next();
-  };
+  }
+
+  async emitCacheRequest<T extends SupportedRecordType>(zone: string, rType: T, records: ZoneData[T]) {
+    this.emit('cacheRequest', {
+      zoneName: zone,
+      recordType: rType,
+      records: records,
+    });
+  }
 }
