@@ -1,5 +1,3 @@
-import { SupportedRecordType, ZoneData } from "../../types/dns";
-
 interface DeserializedTrieData<K extends keyof T, T> {
   trie: DeserializedTrie<K, T>;
   data: [K, T[K][]][];

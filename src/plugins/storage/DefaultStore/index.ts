@@ -1,6 +1,6 @@
 import { Store } from '../Store';
 import { EventEmitter } from 'events';
-import { DNSRequest, DNSResponse, NextFunction, Handler } from '../../../common/server';
+import { DNSRequest, DNSResponse, NextFunction } from '../../../common/server';
 import { resolveWildcards } from '../../../common/core/domainToRegexp';
 import { RecordType } from 'dns-packet';
 import { SupportedAnswer, SupportedRecordType, ZoneData } from '../../../types/dns';
@@ -284,7 +284,7 @@ export class AnswerTrie {
 
 export type DefaultStoreProps = {
   shouldCache?: boolean;
-}
+};
 
 export class DefaultStore extends EventEmitter implements Store {
   private shouldCache: boolean;
@@ -296,18 +296,11 @@ export class DefaultStore extends EventEmitter implements Store {
     this.shouldCache = props?.shouldCache ?? false;
   }
 
-  async get<T extends SupportedRecordType>(
-    zone: string,
-    rType?: T,
-  ): Promise<ZoneData[T][] | null> {
+  async get<T extends SupportedRecordType>(zone: string, rType?: T): Promise<ZoneData[T][] | null> {
     return this.trie.get(zone, rType) as ZoneData[T][] | null;
   }
 
-  async set<T extends SupportedRecordType>(
-    zone: string,
-    rType: T,
-    data: ZoneData[T] | ZoneData[T][],
-  ): Promise<void> {
+  async set<T extends SupportedRecordType>(zone: string, rType: T, data: ZoneData[T] | ZoneData[T][]): Promise<void> {
     this.trie.add(zone, rType, data);
   }
 
@@ -335,17 +328,19 @@ export class DefaultStore extends EventEmitter implements Store {
 
     if (answers && answers.length > 0) {
       res.answer(answers);
-      if(this.shouldCache) {
+      if (this.shouldCache) {
         this.emitCacheRequest(name, type, records as ZoneData[SupportedRecordType]);
       }
     }
+
+    next();
   }
 
   async emitCacheRequest<T extends SupportedRecordType>(zone: string, rType: T, records: ZoneData[T]) {
     this.emit('cacheRequest', {
       zoneName: zone,
       recordType: rType,
-      records: records
+      records: records,
     });
   }
 }

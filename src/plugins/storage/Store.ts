@@ -1,6 +1,6 @@
 import { Handler } from '../../common/server';
 import { ZoneData, SupportedRecordType } from '../../types/dns';
-import {EventEmitter} from 'events';
+import { EventEmitter } from 'events';
 
 export abstract class Store extends EventEmitter {
   /**
