@@ -298,7 +298,10 @@ export class DefaultStore extends EventEmitter implements Store {
 
   async get(zone: string): Promise<ZoneData[keyof ZoneData][] | null>;
   async get<T extends SupportedRecordType>(zone: string, rType: T): Promise<ZoneData[T][] | null>;
-  async get<T extends SupportedRecordType>(zone: string, rType?: T): Promise<ZoneData[T][] | ZoneData[keyof ZoneData][] | null> {
+  async get<T extends SupportedRecordType>(
+    zone: string,
+    rType?: T,
+  ): Promise<ZoneData[T][] | ZoneData[keyof ZoneData][] | null> {
     if (rType) {
       return this.trie.get(zone, rType) as ZoneData[T][] | null;
     }

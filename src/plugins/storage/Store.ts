@@ -8,7 +8,10 @@ export abstract class Store extends EventEmitter {
    * @param zone The name of the zone to retrieve
    * @param rType The record type to retrieve. If not provided, all records in the zone should be retrieved.
    */
-  abstract get<T extends SupportedRecordType>(zone: string, rType?: T): Promise<ZoneData[T][] | ZoneData[keyof ZoneData][] | null>;
+  abstract get<T extends SupportedRecordType>(
+    zone: string,
+    rType?: T,
+  ): Promise<ZoneData[T][] | ZoneData[keyof ZoneData][] | null>;
 
   /**
    * Set or update information about a zone in the database.
