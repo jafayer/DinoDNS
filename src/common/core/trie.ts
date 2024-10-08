@@ -1,18 +1,20 @@
-interface DeserializedTrieData<K extends keyof T, T> {
-  trie: DeserializedTrie<K, T>;
-  data: [K, T[K][]][];
+interface DeserializedTrieData<T> {
+  trie: DeserializedTrie<T>;
+  data: [keyof T, T[keyof T][]][];
 }
 
-interface DeserializedTrie<K extends keyof T, T> {
-  [key: string]: DeserializedTrieData<K, T>;
+interface DeserializedTrie<T> {
+  [key: string]: DeserializedTrieData<T>;
 }
 
-export class Trie<K extends keyof T, T> {
-  private trie: Map<string, Trie<K, T>> = new Map();
+type TypedMap<K extends keyof T, T> = Map<K, T[K][]>;
 
-  private data: Map<K, T[K][]> = new Map();
+export class Trie<T> {
+  private trie: Map<string, Trie<T>> = new Map();
 
-  private _insert(labels: string[], rType: K, data: T[K] | T[K][]) {
+  private data: TypedMap<keyof T, T> = new Map();
+
+  private _insert<K extends keyof T>(labels: string[], rType: K, data: T[K] | T[K][]) {
     if (!Array.isArray(data)) {
       data = [data];
     }
@@ -33,18 +35,18 @@ export class Trie<K extends keyof T, T> {
     let next = this.trie.get(label);
 
     if (!next) {
-      next = new Trie<K, T>();
+      next = new Trie<T>();
       this.trie.set(label, next);
     }
 
     next._insert(rest, rType, data);
   }
 
-  add(domain: string, rType: K, data: T[K] | T[K][]) {
+  add<K extends keyof T>(domain: string, rType: K, data: T[K] | T[K][]) {
     this._insert(this.domainToLabels(domain), rType, data);
   }
 
-  private _getExact(labels: string[], rType?: K): T[K][] | null {
+  private _getExact<K extends keyof T>(labels: string[], rType?: K): T[K][] | T[keyof T][] | null {
     if (labels.length === 0) {
       if (rType) {
         return this.data.get(rType) || null;
@@ -63,7 +65,7 @@ export class Trie<K extends keyof T, T> {
     return next._getExact(rest, rType);
   }
 
-  private _get(labels: string[], rType?: K): T[keyof T][] | T[K][] | null {
+  private _get<K extends keyof T>(labels: string[], rType?: K): T[keyof T][] | T[K][] | null {
     if (labels.length === 0) {
       if (rType) {
         return this.data.get(rType) || null;
@@ -94,7 +96,7 @@ export class Trie<K extends keyof T, T> {
     return next._get(rest, rType);
   }
 
-  get(domain: string, rType?: K): T[keyof T][] | T[K][] | null {
+  get<K extends keyof T>(domain: string, rType?: K): T[keyof T][] | T[K][] | null {
     // first try to get the exact match
     const exact = this._getExact(this.domainToLabels(domain), rType);
     if (exact) {
@@ -128,7 +130,7 @@ export class Trie<K extends keyof T, T> {
     return this._has(this.domainToLabels(domain));
   }
 
-  private _delete(labels: string[], rType?: K, rData?: T[K]) {
+  private _delete<K extends keyof T>(labels: string[], rType?: K, rData?: T[K]) {
     if (labels.length === 0) {
       if (rType) {
         if (!rData) {
@@ -167,17 +169,17 @@ export class Trie<K extends keyof T, T> {
     next._delete(rest, rType, rData);
   }
 
-  delete(domain: string, rType?: K, rData?: T[K]) {
+  delete<K extends keyof T>(domain: string, rType?: K, rData?: T[K]) {
     this._delete(this.domainToLabels(domain), rType, rData);
   }
 
-  append(domain: string, rType: K, data: T[K]) {
+  append<K extends keyof T>(domain: string, rType: K, data: T[K]) {
     const labels = this.domainToLabels(domain);
     const [label, ...rest] = labels;
     let next = this.trie.get(label);
 
     if (!next) {
-      next = new Trie<K, T>();
+      next = new Trie<T>();
       this.trie.set(label, next);
     }
 
@@ -217,7 +219,7 @@ export class Trie<K extends keyof T, T> {
     return this._resolve(this.domainToLabels(domain));
   }
 
-  private serializeTrie(trie: Map<string, Trie<K, T>>): object {
+  private serializeTrie(trie: Map<string, Trie<T>>): object {
     const obj: { [key: string]: object } = {};
     for (const [key, value] of trie) {
       obj[key] = {
@@ -233,9 +235,9 @@ export class Trie<K extends keyof T, T> {
     return JSON.stringify(obj);
   }
 
-  private deserializeTrie(obj: DeserializedTrie<K, T>) {
+  private deserializeTrie(obj: DeserializedTrie<T>) {
     for (const [key, value] of Object.entries(obj)) {
-      const trie = new Trie<K, T>();
+      const trie = new Trie<T>();
       trie.deserializeTrie(value.trie);
       this.trie.set(key, trie);
 
@@ -245,9 +247,9 @@ export class Trie<K extends keyof T, T> {
     }
   }
 
-  static fromString<K extends keyof T, T>(str: string): Trie<K, T> {
-    const obj = JSON.parse(str) as DeserializedTrie<K, T>;
-    const trie = new Trie<K, T>();
+  static fromString<T>(str: string): Trie<T> {
+    const obj = JSON.parse(str) as DeserializedTrie<T>;
+    const trie = new Trie<T>();
     trie.deserializeTrie(obj);
     return trie;
   }

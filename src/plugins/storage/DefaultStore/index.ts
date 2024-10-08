@@ -288,7 +288,7 @@ export type DefaultStoreProps = {
 
 export class DefaultStore extends EventEmitter implements Store {
   private shouldCache: boolean;
-  trie: Trie<SupportedRecordType, ZoneData> = new Trie();
+  trie: Trie<ZoneData> = new Trie();
 
   constructor(props?: DefaultStoreProps) {
     super();
@@ -296,8 +296,19 @@ export class DefaultStore extends EventEmitter implements Store {
     this.shouldCache = props?.shouldCache ?? false;
   }
 
-  async get<T extends SupportedRecordType>(zone: string, rType?: T): Promise<ZoneData[T][] | null> {
-    return this.trie.get(zone, rType) as ZoneData[T][] | null;
+  async get(zone: string): Promise<ZoneData[keyof ZoneData][] | null>;
+  async get<T extends SupportedRecordType>(zone: string, rType: T): Promise<ZoneData[T][] | null>;
+  async get<T extends SupportedRecordType>(zone: string, rType?: T): Promise<ZoneData[T][] | ZoneData[keyof ZoneData][] | null> {
+    if (rType) {
+      return this.trie.get(zone, rType) as ZoneData[T][] | null;
+    }
+
+    const results = this.trie.get(zone);
+    if (!results) {
+      return null;
+    }
+
+    return results as ZoneData[keyof ZoneData][];
   }
 
   async set<T extends SupportedRecordType>(zone: string, rType: T, data: ZoneData[T] | ZoneData[T][]): Promise<void> {
