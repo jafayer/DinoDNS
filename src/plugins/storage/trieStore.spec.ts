@@ -84,6 +84,11 @@ describe('AnswerTrie', () => {
     expect(trie.get('example.com', 'A')).toEqual([records[0]]);
   });
 
+  it('should be able to resolve a domain', () => {
+    trie.add('example.com', 'A', records);
+    expect(trie.resolve('example.com')).toEqual('example.com');
+  });
+ 
   it('Should be able to resolve wildcard queries', () => {
     trie.add(
       '*.example.com',
