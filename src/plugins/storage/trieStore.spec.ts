@@ -88,7 +88,7 @@ describe('AnswerTrie', () => {
     trie.add('example.com', 'A', records);
     expect(trie.resolve('example.com')).toEqual('example.com');
   });
- 
+
   it('Should be able to resolve wildcard queries', () => {
     trie.add(
       '*.example.com',

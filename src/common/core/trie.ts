@@ -85,7 +85,7 @@ export class Trie<T> {
         return result;
       }
     }
-    
+
     if (!wildcard) {
       return null;
     }
@@ -207,10 +207,10 @@ export class Trie<T> {
   /**
    * Resolves a string label to its match in the trie. Handles wildcard matches
    * according to RFC 1034. Should return matching domain or undefined if no match is found.
-   * 
-   * 
+   *
+   *
    * @param labels The labels to resolve
-   * @returns 
+   * @returns
    */
   private _resolve(labels: string[]): string {
     if (labels.length === 0) {
@@ -219,7 +219,7 @@ export class Trie<T> {
 
     const [label, ...rest] = labels;
     const next = this.trie.get(label);
-    
+
     console.log(label, rest, next);
 
     if (next) {
