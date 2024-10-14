@@ -152,8 +152,8 @@ export class DefaultStore extends EventEmitter implements Store {
             ),
           ];
         }),
-      )
-    )
+      ),
+    );
   }
 
   static fromString(str: string) {

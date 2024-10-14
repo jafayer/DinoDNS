@@ -20,7 +20,11 @@ export abstract class Store extends EventEmitter {
    * @param rType The record type to set
    * @param data The data to set
    */
-  abstract set<T extends SupportedRecordType>(zone: string, rType: T, data: ZoneData[T] | ZoneData[T][]): Awaitable<void>;
+  abstract set<T extends SupportedRecordType>(
+    zone: string,
+    rType: T,
+    data: ZoneData[T] | ZoneData[T][],
+  ): Awaitable<void>;
 
   /**
    * Append information about a zone in the database.

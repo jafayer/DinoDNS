@@ -1,24 +1,23 @@
-
 /**
  * Deprecated for now.
- * 
+ *
  * this is a trie implementation that can store data for each domain.
- * 
+ *
  * This is deprecated largely because it turns out not to be more efficient than a simple flat map-based
  * implementation. This is due mostly to how wildcard matches must work according to RFC 1034.
- * 
+ *
  * Matches must be done from the most specific to the least specific, meaning that storing
  * labels as connected nodes in a trie makes it difficult to achieve better performance than a flat map
  * since the trie will always need to traverse the entire tree to the leaf node anyway.
- * 
+ *
  * That is, if com -> * exists, as well as com -> example -> test, and a user searches for test.example.com,
  * we would need to search for com -> example -> test anyway, and could not simply stop and return the wildcard
  * match at com -> *.
- * 
+ *
  * In practice, if we modified the _get method to return an array of all matches, and then selected the last
  * match in the array, we could achieve this result without multiple searches. However, this still doesn't
  * perform better for exact matches (which are O(1) in a flat map vs O(m) for m labels in a domain) in a trie.
- * 
+ *
  * This code may still be useful so we're not getting rid of it, but it'll be deprecated for now.
  */
 import { isEqual } from 'lodash';

@@ -196,7 +196,6 @@ describe('MapStore', () => {
     });
   });
 
-
   describe('fromString', () => {
     it('should be able to create a store from a string', () => {
       const str = JSON.stringify({
