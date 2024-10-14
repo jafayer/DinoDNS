@@ -1,6 +1,6 @@
 {
   "name": "dinodns",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "A pure Typescript, low-configuration full DNS server",
   "main": "index.js",
   "types": "index.d.ts",
@@ -43,6 +43,7 @@
   "devDependencies": {
     "@types/dns-packet": "^5.6.5",
     "@types/jest": "^29.5.13",
+    "@types/lodash": "^4.17.10",
     "@typescript-eslint/parser": "^8.7.0",
     "eslint": "^9.11.1",
     "eslint-config-prettier": "^9.1.0",
@@ -58,6 +59,7 @@
     "typescript-eslint": "^8.7.0"
   },
   "dependencies": {
-    "dns-packet": "^5.6.1"
+    "dns-packet": "^5.6.1",
+    "lodash": "^4.17.21"
   }
 }
