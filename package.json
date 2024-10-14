@@ -34,9 +34,8 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepublishOnly": "npm run build:clean",
     "postpublish": "git push --follow-tags",
-    "release": "cp package.json dist/package.json && cd dist && npm publish",
+    "release": "npm run build:clean && cp package.json dist/package.json && cd dist && npm publish",
     "package": "npm run build:clean && cp package.json dist/package.json && cd dist && npm pack"
   },
   "license": "ISC",
