@@ -29,44 +29,40 @@ export class MapStore extends EventEmitter implements Store {
     rType?: T,
     wildcards: boolean = true,
   ): Promise<ZoneData[T][] | ZoneData[keyof ZoneData][] | null> {
-    if(rType) {
-        const record = this.data.get(domain);
-        if (record && record.size > 0) {
-          return record.get(rType) || null;
-        }
+    if (rType) {
+      const record = this.data.get(domain);
+      if (record && record.size > 0) {
+        return record.get(rType) || null;
+      }
     } else {
-        const record = this.data.get(domain);
-        if(record && record.size > 0) {
-          return Array.from(record.values()).flat();
-        }
+      const record = this.data.get(domain);
+      if (record && record.size > 0) {
+        return Array.from(record.values()).flat();
+      }
     }
 
-    if(!wildcards) {
+    if (!wildcards) {
       return null;
     }
 
-    let labels = domain
-      .split('.')
-      .toSpliced(0,0,'*');
-      
-    while(labels.length > 1) {
-        labels = labels
-          .toSpliced(0,2)
-          .toSpliced(0,0,'*');
+    let labels = domain.split('.').toSpliced(0, 0, '*');
 
-        const wildcardDomain = labels.join('.');
-        
-        if(rType) {
-          const record = this.data.get(wildcardDomain);
-          if (record && record.size > 0) {
-            return record.get(rType) || null;
-          }
-        } else {
-          const record = this.data.get(wildcardDomain);
-          if(record && record.size > 0) {
-            return Array.from(record.values()).flat();
-          }
+    while (labels.length > 1) {
+      labels = labels.toSpliced(0, 2).toSpliced(0, 0, '*');
+
+      const wildcardDomain = labels.join('.');
+
+      if (rType) {
+        const record = this.data.get(wildcardDomain);
+        if (record && record.size > 0) {
+          return record.get(rType) || null;
         }
+      } else {
+        const record = this.data.get(wildcardDomain);
+        if (record && record.size > 0) {
+          return Array.from(record.values()).flat();
+        }
+      }
     }
 
     return null;
