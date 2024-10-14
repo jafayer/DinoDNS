@@ -1,19 +1,19 @@
-import { MapStore } from './mapStore';
+import { DefaultStore } from '.';
 import { ZoneData } from '../../../types/dns';
 
 describe('MapStore', () => {
-  let store: MapStore;
+  let store: DefaultStore;
   const ARecords: ZoneData['A'][] = ['127.0.0.1', '127.0.0.2'];
   const AAAARecords: ZoneData['AAAA'][] = ['::1', '::2'];
 
   beforeEach(() => {
-    store = new MapStore();
+    store = new DefaultStore();
   });
 
   describe('create', () => {
     it('should be able to create a new store', () => {
-      const newStore = new MapStore();
-      expect(newStore).toBeInstanceOf(MapStore);
+      const newStore = new DefaultStore();
+      expect(newStore).toBeInstanceOf(DefaultStore);
     });
   });
 
@@ -206,16 +206,16 @@ describe('MapStore', () => {
         },
       });
 
-      const newStore = MapStore.fromString(str);
-      expect(newStore).toBeInstanceOf(MapStore);
+      const newStore = DefaultStore.fromString(str);
+      expect(newStore).toBeInstanceOf(DefaultStore);
       expect(newStore.toString()).toEqual(str);
     });
 
     it('should be able to create an empty store from a string', () => {
       const str = JSON.stringify({});
 
-      const newStore = MapStore.fromString(str);
-      expect(newStore).toBeInstanceOf(MapStore);
+      const newStore = DefaultStore.fromString(str);
+      expect(newStore).toBeInstanceOf(DefaultStore);
       expect(newStore.toString()).toEqual(str);
     });
   });
