@@ -124,4 +124,9 @@ describe('Generic Trie tests', () => {
     trie.add('test.sub.example.com', 'Key', ['Value']);
     expect(trie.resolve('test.sub.example.com')).toEqual('test.sub.example.com');
   });
+
+  it('should not resolve a domain that does not exist', () => {
+    trie.add('example.com', 'Key', ['Value']);
+    expect(trie.resolve('sub.example.com')).toEqual(null);
+  });
 });

@@ -1,3 +1,26 @@
+
+/**
+ * Deprecated for now.
+ * 
+ * this is a trie implementation that can store data for each domain.
+ * 
+ * This is deprecated largely because it turns out not to be more efficient than a simple flat map-based
+ * implementation. This is due mostly to how wildcard matches must work according to RFC 1034.
+ * 
+ * Matches must be done from the most specific to the least specific, meaning that storing
+ * labels as connected nodes in a trie makes it difficult to achieve better performance than a flat map
+ * since the trie will always need to traverse the entire tree to the leaf node anyway.
+ * 
+ * That is, if com -> * exists, as well as com -> example -> test, and a user searches for test.example.com,
+ * we would need to search for com -> example -> test anyway, and could not simply stop and return the wildcard
+ * match at com -> *.
+ * 
+ * In practice, if we modified the _get method to return an array of all matches, and then selected the last
+ * match in the array, we could achieve this result without multiple searches. However, this still doesn't
+ * perform better for exact matches (which are O(1) in a flat map vs O(m) for m labels in a domain) in a trie.
+ * 
+ * This code may still be useful so we're not getting rid of it, but it'll be deprecated for now.
+ */
 import { isEqual } from 'lodash';
 
 interface DeserializedTrieData<T> {
@@ -46,25 +69,6 @@ export class Trie<T> {
 
   add<K extends keyof T>(domain: string, rType: K, data: T[K] | T[K][]) {
     this._insert(this.domainToLabels(domain), rType, data);
-  }
-
-  private _getExact<K extends keyof T>(labels: string[], rType?: K): T[K][] | T[keyof T][] | null {
-    if (labels.length === 0) {
-      if (rType) {
-        return this.data.get(rType) || null;
-      }
-
-      return Array.from(this.data.values()).flat();
-    }
-
-    const [label, ...rest] = labels;
-    const next = this.trie.get(label);
-
-    if (!next) {
-      return null;
-    }
-
-    return next._getExact(rest, rType);
   }
 
   private _get<K extends keyof T>(labels: string[], rType?: K, wildcard: boolean = true): T[keyof T][] | T[K][] | null {
@@ -122,25 +126,6 @@ export class Trie<T> {
     }
 
     return null;
-  }
-
-  private _has(labels: string[]): boolean {
-    if (labels.length === 0) {
-      return this.data.size > 0;
-    }
-
-    const [label, ...rest] = labels;
-    const next = this.trie.get(label);
-
-    if (!next) {
-      return false;
-    }
-
-    return next._has(rest);
-  }
-
-  has(domain: string): boolean {
-    return this._has(this.domainToLabels(domain));
   }
 
   private _delete<K extends keyof T>(labels: string[], rType?: K, rData?: T[K]) {
@@ -204,53 +189,24 @@ export class Trie<T> {
     }
   }
 
-  /**
-   * Resolves a string label to its match in the trie. Handles wildcard matches
-   * according to RFC 1034. Should return matching domain or undefined if no match is found.
-   *
-   *
-   * @param labels The labels to resolve
-   * @returns
-   */
-  private _resolve(labels: string[]): string {
-    if (labels.length === 0) {
-      return '';
-    }
-
-    const [label, ...rest] = labels;
-    const next = this.trie.get(label);
-
-    console.log(label, rest, next);
-
-    if (next) {
-      const resolved = next._resolve(rest);
-      if (resolved) {
-        return `${resolved}.${label}`;
-      }
-
-      return label;
-    }
-
-    const wildcard = this.trie.get('*');
-    if (wildcard) {
-      return '*';
-    }
-
-    return label;
-  }
-
-  resolve(domain: string): string | undefined {
+  resolve(domain: string): string | null {
     let labels = this.domainToLabels(domain);
 
-    while (labels.length > 0) {
-      const resolved = this._resolve(labels);
-      if (resolved) {
-        return resolved;
-      }
-      labels = labels.toSpliced(-1);
+    const result = this._get(labels, undefined, false);
+    if (result) {
+      return labels.reverse().join('.');
     }
 
-    return;
+    while (labels.length > 0) {
+      labels = labels.toSpliced(-1);
+
+      const wildcardResult = this._get([...labels, '*'], undefined, false);
+      if (wildcardResult) {
+        return [...labels, '*'].reverse().join('.');
+      }
+    }
+
+    return null;
   }
 
   private serializeTrie(trie: Map<string, Trie<T>>): object {
