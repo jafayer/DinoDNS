@@ -11,10 +11,11 @@ export class DefaultStore extends EventEmitter implements Store {
     super();
 
     this.shouldCache = shouldCache;
+    this.handler = this.handler.bind(this);
   }
   data: Map<string, TypedMap<SupportedRecordType, ZoneData>> = new Map();
 
-  async set<T extends SupportedRecordType>(domain: string, rType: T, data: ZoneData[T] | ZoneData[T][]): Promise<void> {
+  set<T extends SupportedRecordType>(domain: string, rType: T, data: ZoneData[T] | ZoneData[T][]): void {
     const record = this.data.get(domain) || (new Map() as TypedMap<SupportedRecordType, ZoneData>);
     if (!Array.isArray(data)) {
       data = [data];
@@ -24,11 +25,11 @@ export class DefaultStore extends EventEmitter implements Store {
     this.data.set(domain, record);
   }
 
-  async get<T extends SupportedRecordType>(
+  get<T extends SupportedRecordType>(
     domain: string,
     rType?: T,
     wildcards: boolean = true,
-  ): Promise<ZoneData[T][] | ZoneData[keyof ZoneData][] | null> {
+  ): ZoneData[T][] | ZoneData[keyof ZoneData][] | null {
     if (rType) {
       const record = this.data.get(domain);
       if (record && record.size > 0) {
@@ -68,14 +69,14 @@ export class DefaultStore extends EventEmitter implements Store {
     return null;
   }
 
-  async append<T extends SupportedRecordType>(domain: string, type: T, data: ZoneData[T]): Promise<void> {
+  append<T extends SupportedRecordType>(domain: string, type: T, data: ZoneData[T]): void {
     const record = this.data.get(domain) || (new Map() as TypedMap<SupportedRecordType, ZoneData>);
     const existing = record.get(type) || [];
     record.set(type, [...existing, data]);
     this.data.set(domain, record);
   }
 
-  async delete<T extends SupportedRecordType>(domain: string, type?: T, data?: ZoneData[T]): Promise<void> {
+  delete<T extends SupportedRecordType>(domain: string, type?: T, data?: ZoneData[T]): void {
     if (!type) {
       this.data.delete(domain);
       return;
@@ -105,11 +106,11 @@ export class DefaultStore extends EventEmitter implements Store {
     }
   }
 
-  async handler(req: DNSRequest, res: DNSResponse, next: NextFunction) {
+  handler(req: DNSRequest, res: DNSResponse, next: NextFunction) {
     const { questions } = req.packet;
     const { name, type } = questions![0];
 
-    const records = await this.get(name, type);
+    const records = this.get(name, type);
 
     const answers: SupportedAnswer[] | undefined = records?.map((record) => {
       return {
