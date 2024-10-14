@@ -153,7 +153,7 @@ describe('MapStore', () => {
 
   describe('Cache request', () => {
     it('should be able to emit a cache request', (done) => {
-      store.on('cacheRequest', (req) => {
+      store.on('cacheRequest', () => {
         done();
       });
 
