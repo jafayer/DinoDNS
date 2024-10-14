@@ -137,4 +137,34 @@ export class MapStore extends EventEmitter implements Store {
       records: records,
     });
   }
+
+  toString() {
+    return JSON.stringify(
+      Object.fromEntries(
+        Array.from(this.data.entries()).map(([domain, records]) => {
+          return [
+            domain,
+            Object.fromEntries(
+              Array.from(records.entries()).map(([rType, data]) => {
+                return [rType, data];
+              }),
+            ),
+          ];
+        }),
+      )
+    )
+  }
+
+  static fromString(str: string) {
+    const obj = JSON.parse(str) as { [key: string]: { [key in SupportedRecordType]: ZoneData[key][] } };
+    const store = new MapStore();
+
+    for (const [domain, data] of Object.entries(obj)) {
+      for (const [rType, records] of Object.entries(data)) {
+        store.set(domain, rType as SupportedRecordType, records);
+      }
+    }
+
+    return store;
+  }
 }

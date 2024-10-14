@@ -160,4 +160,63 @@ describe('MapStore', () => {
       store.emitCacheRequest('example.com', 'A', ARecords);
     });
   });
+
+  describe('toString', () => {
+    it('should be able to stringify the store', async () => {
+      await store.set('example.com', 'A', ARecords);
+      await store.set('example.com', 'AAAA', AAAARecords);
+
+      expect(store.toString()).toEqual(
+        JSON.stringify({
+          'example.com': {
+            A: ARecords,
+            AAAA: AAAARecords,
+          },
+        }),
+      );
+    });
+
+    it('should be able to stringify an empty store', () => {
+      expect(store.toString()).toEqual(JSON.stringify({}));
+    });
+
+    it('should handle null values', async () => {
+      await store.set('example.com', 'A', ARecords);
+      await store.set('example.com', 'AAAA', AAAARecords);
+
+      await store.delete('example.com', 'A');
+
+      expect(store.toString()).toEqual(
+        JSON.stringify({
+          'example.com': {
+            AAAA: AAAARecords,
+          },
+        }),
+      );
+    });
+  });
+
+
+  describe('fromString', () => {
+    it('should be able to create a store from a string', () => {
+      const str = JSON.stringify({
+        'example.com': {
+          A: ARecords,
+          AAAA: AAAARecords,
+        },
+      });
+
+      const newStore = MapStore.fromString(str);
+      expect(newStore).toBeInstanceOf(MapStore);
+      expect(newStore.toString()).toEqual(str);
+    });
+
+    it('should be able to create an empty store from a string', () => {
+      const str = JSON.stringify({});
+
+      const newStore = MapStore.fromString(str);
+      expect(newStore).toBeInstanceOf(MapStore);
+      expect(newStore.toString()).toEqual(str);
+    });
+  });
 });
