@@ -2,6 +2,7 @@ import { ZoneData, SupportedRecordType, SupportedAnswer } from '../../../types/d
 import { Store } from '../Store';
 import { EventEmitter } from 'events';
 import { DNSRequest, DNSResponse, NextFunction } from '../../../types/server';
+import {isEqual as _isEqual} from 'lodash';
 
 type TypedMap<K extends keyof T, T> = Map<K, T[K][]>;
 
@@ -97,7 +98,7 @@ export class DefaultStore extends EventEmitter implements Store {
       return;
     }
 
-    const newData = existing.filter((d) => d !== data);
+    const newData = existing.filter((d) => !_isEqual(d, data));
     if (newData.length === 0) {
       record.delete(type);
       return;
@@ -120,11 +121,11 @@ export class DefaultStore extends EventEmitter implements Store {
       } as SupportedAnswer;
     });
 
-    if (answers && answers.length > 0) {
+    if (records && answers && answers.length > 0) {
       res.answer(answers);
 
       if (this.shouldCache) {
-        this.emitCacheRequest(name, type, records as ZoneData[SupportedRecordType][]);
+        this.emitCacheRequest(name, type, records);
       }
     }
 
