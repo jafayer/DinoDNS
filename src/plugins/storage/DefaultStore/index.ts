@@ -2,7 +2,7 @@ import { ZoneData, SupportedRecordType, SupportedAnswer } from '../../../types/d
 import { Store } from '../Store';
 import { EventEmitter } from 'events';
 import { DNSRequest, DNSResponse, NextFunction } from '../../../types/server';
-import {isEqual as _isEqual} from 'lodash';
+import { isEqual as _isEqual } from 'lodash';
 
 type TypedMap<K extends keyof T, T> = Map<K, T[K][]>;
 
