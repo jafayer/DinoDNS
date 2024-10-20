@@ -50,7 +50,6 @@ export class DefaultCache extends Cache {
 
   delete(zone: string, rType: SupportedRecordType, data?: ZoneData[SupportedRecordType]) {
     const key = DefaultCache.getKey(zone, rType);
-    const existing = this.cache.get(key) || [];
 
     if (data) {
       const existing = this.cache.get(key) || [];

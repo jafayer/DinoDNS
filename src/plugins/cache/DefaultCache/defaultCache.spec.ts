@@ -1,5 +1,5 @@
 import { DefaultCache } from './index';
-import { ZoneData, SupportedAnswer, SupportedRecordType } from '../../../types/dns';
+import { ZoneData, SupportedRecordType } from '../../../types/dns';
 
 describe('DefaultCache', () => {
   let cache: DefaultCache;
@@ -33,7 +33,6 @@ describe('DefaultCache', () => {
 
     it('should evict a random member when the cache is full', () => {
       cache = new DefaultCache({ maxEntries: 3 });
-      const zone = 'example.com';
       const rType: SupportedRecordType = 'A';
       const data: ZoneData['A'][] = Array.from({ length: 10 }, (_, i) => `127.0.0.${i + 1}`);
       const domains = Array.from({ length: 10 }, (_, i) => `example${i}.com`);
@@ -41,7 +40,7 @@ describe('DefaultCache', () => {
       const pairs = domains.map((domain, i) => [domain, data[i]] as [string, ZoneData['A']]);
 
       pairs.forEach(([domain, record]) => cache.set(domain, rType, record));
-      const results = pairs.map(([domain, _]) => cache.get(domain, rType));
+      const results = pairs.map(([domain]) => cache.get(domain, rType));
       const filtered = results.filter(Boolean);
       expect(filtered.length).toBe(3);
       expect(cache.size).toBe(3);
@@ -113,7 +112,7 @@ describe('DefaultCache', () => {
         cache.append(domain, rType, record);
       });
 
-      const results = pairs.map(([domain, _]) => cache.get(domain, rType));
+      const results = pairs.map(([domain]) => cache.get(domain, rType));
       const filtered = results.filter(Boolean);
       expect(filtered.length).toBe(4);
 
