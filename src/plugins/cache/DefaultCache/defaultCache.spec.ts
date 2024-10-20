@@ -32,6 +32,7 @@ describe('DefaultCache', () => {
         });
 
         it('should evict a random member when the cache is full', () => {
+            cache = new DefaultCache({ maxEntries: 3 });
             const zone = 'example.com';
             const rType: SupportedRecordType = 'A';
             const data: ZoneData['A'][] = Array.from({ length: 10 }, (_, i) => `127.0.0.${i + 1}`);
@@ -114,10 +115,10 @@ describe('DefaultCache', () => {
 
             const results = pairs.map(([domain, _]) => cache.get(domain, rType));
             const filtered = results.filter(Boolean);
-            expect(filtered.length).toBe(3);
+            expect(filtered.length).toBe(4);
 
             expect(filtered[0]!.length).toBe(2);
-            expect(cache.size).toBe(3);
+            expect(cache.size).toBe(4);
         });
 
         it('should not append any records when cache size is 0', () => {
