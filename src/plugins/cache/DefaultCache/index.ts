@@ -14,6 +14,8 @@ export class DefaultCache extends Cache {
   constructor(options?: DefaultCacheOptions) {
     super();
     this.maxEntries = options?.maxEntries;
+
+    this.handler = this.handler.bind(this);
   }
 
   get<T extends SupportedRecordType>(zone: string, rType: T): ZoneData[T][] | ZoneData[keyof ZoneData][] | null {
