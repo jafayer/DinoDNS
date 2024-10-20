@@ -55,7 +55,7 @@ export class DefaultCache extends Cache {
     if (data) {
       const existing = this.cache.get(key) || [];
       const newRecords = existing.filter((d) => !_isEqual(d, data));
-      if(newRecords.length === 0) {
+      if (newRecords.length === 0) {
         this.cache.delete(key);
       } else {
         this.cache.set(key, newRecords);
