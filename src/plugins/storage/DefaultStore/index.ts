@@ -108,6 +108,10 @@ export class DefaultStore extends EventEmitter implements Store {
   }
 
   handler(req: DNSRequest, res: DNSResponse, next: NextFunction) {
+    if (res.finished) {
+      return next();
+    }
+
     const { questions } = req.packet;
     const { name, type } = questions![0];
 
