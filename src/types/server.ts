@@ -97,11 +97,11 @@ class PacketWrapper {
     this.raw.answers = answers || [];
   }
 
-  get additionals(): ReadonlyArray<SupportedAnswer> {
-    return (this.raw.additionals || []) as ReadonlyArray<SupportedAnswer>;
+  get additionals(): ReadonlyArray<dnsPacket.Answer> {
+    return (this.raw.additionals || []) as ReadonlyArray<dnsPacket.Answer>;
   }
 
-  set additionals(additionals: SupportedAnswer[]) {
+  set additionals(additionals: dnsPacket.Answer[]) {
     if (this.frozen) {
       throw new ModifiedAfterSentError();
     }
