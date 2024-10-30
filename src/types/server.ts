@@ -10,7 +10,7 @@ import _cloneDeep from 'lodash/cloneDeep';
  * The NextFunction type is a callback function that is used to pass control to the next middleware.
  * It is generally bound by the router to the next handler in the stack, or the default handler if no
  * other handlers are available.
- * 
+ *
  * @param err An optional error object that can be passed to the next middleware.
  */
 export interface NextFunction {
@@ -21,7 +21,7 @@ export interface NextFunction {
  * The Handler type is a callback function used to process requests and responses in the server.
  * Handlers provide access to the request and response objects, as well as the next function in the
  * middleware stack, allowing for flexible and modular request handling.
- * 
+ *
  * @example
  * ```ts
  * // A no-op handler that passes control to the next middleware.
@@ -47,7 +47,7 @@ export class ModifiedAfterSentError extends Error {
 /**
  * A custom error class that is thrown when an attempt is made to send an
  * answer for an already-resolved query.
- * 
+ *
  * Attempting to resolve a query with more than one answer is disallowed as there is
  * no way to handle this behavior in the DNS protocol.
  */
@@ -160,7 +160,7 @@ class PacketWrapper {
    * This is used to prevent modifications to the packet after it has been sent.
    * Note that this method does not modify the current packet wrapper, but instead returns a new
    * frozen packet wrapper.
-   * 
+   *
    * @returns The frozen packet wrapper
    */
   freeze(): PacketWrapper {
@@ -235,10 +235,10 @@ export class DNSResponse extends EventEmitter {
 
   /**
    * Send the response as-is without any modifications and mark the response as finished.
-   * 
+   *
    * This method should not be called by any handlers, as it is intended to be used internally
    * by the server to send responses.
-   * 
+   *
    * For an end-user facing method to accomplish the same effect, see {@link DNSResponse.resolve}
    */
   protected done(): void {
@@ -261,9 +261,9 @@ export class DNSResponse extends EventEmitter {
   /**
    * Send an answer or answers in the response. This method overrides any data
    * that was previously set in the answers section of the DNS packet with the provided answer.
-   * 
+   *
    * @param answer The answer or answers to send in the response.
-   * 
+   *
    * @see [Docs](https://dinodns.dev/core-library/requests_and_responses#resanswer)
    */
   answer(answer: SupportedAnswer | SupportedAnswer[]): void {
@@ -284,7 +284,7 @@ export class DNSResponse extends EventEmitter {
    * Resolve the response with the data that has been set in the packet. This method
    * should be called whenever the server has made direct modifications to the packet
    * and wants to send the response to the client directly as-is.
-   * 
+   *
    * @see [Docs](https://dinodns.dev/core-library/requests_and_responses#resresolve)
    */
   resolve(): void {
@@ -297,9 +297,9 @@ export class DNSResponse extends EventEmitter {
 
   /**
    * Helper object that contains a set of common error responses that can be sent to the client.
-   * 
+   *
    * Calling any of these errors will set the appropriate RCode in the DNS packet and send the response.
-   * 
+   *
    * @see [Docs](https://dinodns.dev/core-library/requests_and_responses/#error-responses)
    */
   errors = {
@@ -327,7 +327,7 @@ export class DNSResponse extends EventEmitter {
 
   /**
    * Return an object representing the data contained in the response.
-   * 
+   *
    * @returns The data object containing the packet, connection, and metadata.
    */
   data() {
@@ -336,15 +336,15 @@ export class DNSResponse extends EventEmitter {
       connection: this.connection,
       metadata: this.metadata,
       ...(this.extra ? { extra: this.extra } : {}),
-    }
+    };
   }
 }
 
 /**
  * Default class representing a DNS Request.
- * 
+ *
  * DNS Requests contain the serialized packet data, and data about the connection.
- * 
+ *
  */
 export class DNSRequest implements CanAnswer<DNSResponse> {
   readonly packet: PacketWrapper;
@@ -371,10 +371,9 @@ export class DNSRequest implements CanAnswer<DNSResponse> {
     };
   }
 
-
   /**
    * Return a new DNSResponse object that contains a DNS packet response equivalent to the request.
-   * 
+   *
    * @returns A DNSResponse object that can be used to send a response to the client.
    */
   toAnswer(): DNSResponse {
@@ -387,7 +386,7 @@ export class DNSRequest implements CanAnswer<DNSResponse> {
 
   /**
    * Return an object representing the data contained in the request.
-   * 
+   *
    * @returns The data object containing the packet, connection, and metadata.
    */
   data() {
@@ -396,6 +395,6 @@ export class DNSRequest implements CanAnswer<DNSResponse> {
       connection: this.connection,
       metadata: this.metadata,
       ...(this.extra ? { extra: this.extra } : {}),
-    }
+    };
   }
 }
