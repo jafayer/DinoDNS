@@ -116,7 +116,6 @@ export class DNSOverUDP implements Network<dnsPacket.Packet> {
       remoteAddress: rinfo.address,
       remotePort: rinfo.port,
       type: SupportedNetworkType.UDP,
-      ts: Date.now(),
     };
   }
 }

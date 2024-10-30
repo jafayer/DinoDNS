@@ -85,7 +85,6 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
       remoteAddress: socket.remoteAddress || '',
       remotePort: socket.remotePort || 0,
       type: SupportedNetworkType.TCP,
-      ts: Date.now(),
     };
   }
 }

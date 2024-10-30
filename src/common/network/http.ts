@@ -140,7 +140,6 @@ export class DNSOverHTTP implements Network<dnsPacket.Packet> {
       remoteAddress: res.socket?.remoteAddress || '',
       remotePort: res.socket?.remotePort || 0,
       type: SupportedNetworkType.HTTP,
-      ts: Date.now(),
     };
   }
 }
