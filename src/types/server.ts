@@ -127,6 +127,17 @@ class PacketWrapper {
     return copy;
   }
 }
+
+export interface Timings {
+  requestTimeMs?: number;
+  requestTimeNs?: bigint;
+  responseTimeMs?: number;
+  responseTimeNs?: bigint;
+}
+
+export interface MessageMetadata {
+  ts: Timings;
+}
 /**
  * Default class representing a DNS Response.
  *
@@ -136,17 +147,29 @@ export class DNSResponse extends EventEmitter {
   packet: PacketWrapper;
   readonly connection: Connection;
   private fin: boolean = false;
+  metadata: MessageMetadata;
 
-  constructor(packet: dnsPacket.Packet, connection: Connection) {
+  constructor(packet: dnsPacket.Packet, connection: Connection, metadata?: MessageMetadata) {
     super();
     this.packet = new PacketWrapper(packet);
     this.connection = connection;
+
+    this.metadata = metadata || {
+      ts: {}
+    };
   }
 
   done(): void {
     this.packet = this.packet.freeze();
-    this.emit('done', { ...this.packet.raw });
     this.fin = true;
+    this.metadata = {
+      ts: {
+        ...this.metadata.ts,
+        responseTimeMs: Date.now(),
+        responseTimeNs: process.hrtime.bigint(),
+      }
+    }
+    this.emit('done', { ...this.packet.raw });
   }
 
   get finished() {
@@ -202,10 +225,18 @@ export class DNSResponse extends EventEmitter {
 export class DNSRequest implements CanAnswer<DNSResponse> {
   readonly packet: PacketWrapper;
   connection: Connection;
+  metadata: MessageMetadata;
 
   constructor(packet: dnsPacket.Packet, connection: Connection) {
     this.packet = new PacketWrapper(packet);
     this.connection = connection;
+
+    this.metadata = {
+      ts: {
+        requestTimeMs: Date.now(),
+        requestTimeNs: process.hrtime.bigint(),
+      },
+    };
   }
 
   toAnswer(): DNSResponse {
@@ -213,6 +244,6 @@ export class DNSRequest implements CanAnswer<DNSResponse> {
       ...this.packet.raw,
       type: 'response',
     };
-    return new DNSResponse(newPacket, this.connection);
+    return new DNSResponse(newPacket, this.connection, this.metadata);
   }
 }

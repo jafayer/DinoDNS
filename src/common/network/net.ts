@@ -36,5 +36,4 @@ export interface Connection {
   remoteAddress: string;
   remotePort: number;
   type: SupportedNetworkType;
-  ts: number;
 }
