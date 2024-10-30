@@ -148,6 +148,7 @@ export class DNSResponse extends EventEmitter {
   readonly connection: Connection;
   private fin: boolean = false;
   metadata: MessageMetadata;
+  extra: object | undefined;
 
   constructor(packet: dnsPacket.Packet, connection: Connection, metadata?: MessageMetadata) {
     super();
@@ -220,12 +221,22 @@ export class DNSResponse extends EventEmitter {
       this.done();
     },
   };
+
+  data() {
+    return {
+      packet: this.packet.raw,
+      connection: this.connection,
+      metadata: this.metadata,
+      ...(this.extra ? { extra: this.extra } : {}),
+    }
+  }
 }
 
 export class DNSRequest implements CanAnswer<DNSResponse> {
   readonly packet: PacketWrapper;
   connection: Connection;
   metadata: MessageMetadata;
+  extra: object | undefined;
 
   constructor(packet: dnsPacket.Packet, connection: Connection) {
     this.packet = new PacketWrapper(packet);
@@ -245,5 +256,14 @@ export class DNSRequest implements CanAnswer<DNSResponse> {
       type: 'response',
     };
     return new DNSResponse(newPacket, this.connection, this.metadata);
+  }
+
+  data() {
+    return {
+      packet: this.packet.raw,
+      connection: this.connection,
+      metadata: this.metadata,
+      ...(this.extra ? { extra: this.extra } : {}),
+    }
   }
 }
