@@ -4,21 +4,53 @@ import { CanAnswer } from '../common/serializer';
 import { CombineFlags, RCode } from '../common/core/utils';
 import { EventEmitter } from 'events';
 import { SupportedAnswer, SupportedQuestion } from '../types/dns';
+import _cloneDeep from 'lodash/cloneDeep';
 
+/**
+ * The NextFunction type is a callback function that is used to pass control to the next middleware.
+ * It is generally bound by the router to the next handler in the stack, or the default handler if no
+ * other handlers are available.
+ * 
+ * @param err An optional error object that can be passed to the next middleware.
+ */
 export interface NextFunction {
   (err?: Error): void;
 }
 
+/**
+ * The Handler type is a callback function used to process requests and responses in the server.
+ * Handlers provide access to the request and response objects, as well as the next function in the
+ * middleware stack, allowing for flexible and modular request handling.
+ * 
+ * @example
+ * ```ts
+ * // A no-op handler that passes control to the next middleware.
+ * (req, res, next) => {
+ *  next();
+ * }
+ * ```
+ */
 export interface Handler {
   (req: DNSRequest, res: DNSResponse, next: NextFunction): void;
 }
 
+/**
+ * A custom error class that is thrown when an attempt is made to modify a response
+ * packet after it has been sent.
+ */
 export class ModifiedAfterSentError extends Error {
   constructor() {
     super('Cannot modify response after it has been sent');
   }
 }
 
+/**
+ * A custom error class that is thrown when an attempt is made to send an
+ * answer for an already-resolved query.
+ * 
+ * Attempting to resolve a query with more than one answer is disallowed as there is
+ * no way to handle this behavior in the DNS protocol.
+ */
 export class DuplicateAnswerForRequest extends Error {
   constructor() {
     super('Cannot send more than one answer for an already-resolved query');
@@ -42,9 +74,16 @@ export class DuplicateAnswerForRequest extends Error {
  * `dns-packet`. If the `Packet` type changes, this class will need to be updated.
  */
 class PacketWrapper {
+  /** The raw DNS packet */
   raw: dnsPacket.Packet;
+
+  /** A flag to indicate whether the packet has been sent and is therefore frozen */
   frozen: boolean = false;
 
+  /**
+   * Create a new packet wrapper.
+   * @param packet The raw DNS packet
+   */
   constructor(packet: dnsPacket.Packet) {
     this.raw = packet;
   }
@@ -108,10 +147,22 @@ class PacketWrapper {
     this.raw.additionals = additionals || [];
   }
 
+  /**
+   * Create a copy of the packet wrapper.
+   * @returns A copy of the packet wrapper
+   */
   copy(): PacketWrapper {
-    return new PacketWrapper({ ...this.raw });
+    return new PacketWrapper(_cloneDeep(this.raw));
   }
 
+  /**
+   * Freeze the packet wrapper immutably, making it read-only.
+   * This is used to prevent modifications to the packet after it has been sent.
+   * Note that this method does not modify the current packet wrapper, but instead returns a new
+   * frozen packet wrapper.
+   * 
+   * @returns The frozen packet wrapper
+   */
   freeze(): PacketWrapper {
     const copy = this.copy();
     copy.frozen = true;
@@ -128,26 +179,48 @@ class PacketWrapper {
   }
 }
 
+/**
+ * The timings object that is included in the metadata for requests and responses.
+ */
 export interface Timings {
+  /** The time of the request in milliseconds */
   requestTimeMs?: number;
+  /** The time of the request in nanoseconds */
   requestTimeNs?: bigint;
+  /** The time of the response in milliseconds */
   responseTimeMs?: number;
+  /** The time of the response in nanoseconds */
   responseTimeNs?: bigint;
 }
 
+/**
+ * The metadata object that is attached to every request and response.
+ * It contains data about the request or response, such as high-resolution timing information.
+ */
 export interface MessageMetadata {
   ts: Timings;
 }
+
 /**
  * Default class representing a DNS Response.
  *
  * DNS Responses contain the serialized packet data, and data about the connection.
  */
 export class DNSResponse extends EventEmitter {
+  /** The packet wrapper containing the raw DNS packet */
   packet: PacketWrapper;
+
+  /** The connection object representing the client connection */
   readonly connection: Connection;
+
+  /** A flag to indicate whether the response has been sent */
   private fin: boolean = false;
+
+  /** The metadata object for the response */
   metadata: MessageMetadata;
+
+  /** Any extra data that can be attached to the response.
+   * Handlers should use this object to attach any extra metadata if desired */
   extra: object | undefined;
 
   constructor(packet: dnsPacket.Packet, connection: Connection, metadata?: MessageMetadata) {
@@ -160,7 +233,15 @@ export class DNSResponse extends EventEmitter {
     };
   }
 
-  done(): void {
+  /**
+   * Send the response as-is without any modifications and mark the response as finished.
+   * 
+   * This method should not be called by any handlers, as it is intended to be used internally
+   * by the server to send responses.
+   * 
+   * For an end-user facing method to accomplish the same effect, see {@link DNSResponse.resolve}
+   */
+  protected done(): void {
     this.packet = this.packet.freeze();
     this.fin = true;
     this.metadata = {
@@ -177,6 +258,14 @@ export class DNSResponse extends EventEmitter {
     return this.fin;
   }
 
+  /**
+   * Send an answer or answers in the response. This method overrides any data
+   * that was previously set in the answers section of the DNS packet with the provided answer.
+   * 
+   * @param answer The answer or answers to send in the response.
+   * 
+   * @see [Docs](https://dinodns.dev/core-library/requests_and_responses#resanswer)
+   */
   answer(answer: SupportedAnswer | SupportedAnswer[]): void {
     if (this.fin) {
       throw new DuplicateAnswerForRequest();
@@ -191,6 +280,13 @@ export class DNSResponse extends EventEmitter {
     this.done();
   }
 
+  /**
+   * Resolve the response with the data that has been set in the packet. This method
+   * should be called whenever the server has made direct modifications to the packet
+   * and wants to send the response to the client directly as-is.
+   * 
+   * @see [Docs](https://dinodns.dev/core-library/requests_and_responses#resresolve)
+   */
   resolve(): void {
     if (this.fin) {
       throw new DuplicateAnswerForRequest();
@@ -199,6 +295,13 @@ export class DNSResponse extends EventEmitter {
     this.done();
   }
 
+  /**
+   * Helper object that contains a set of common error responses that can be sent to the client.
+   * 
+   * Calling any of these errors will set the appropriate RCode in the DNS packet and send the response.
+   * 
+   * @see [Docs](https://dinodns.dev/core-library/requests_and_responses/#error-responses)
+   */
   errors = {
     nxDomain: () => {
       const flags = this.packet.flags || 0;
@@ -222,6 +325,11 @@ export class DNSResponse extends EventEmitter {
     },
   };
 
+  /**
+   * Return an object representing the data contained in the response.
+   * 
+   * @returns The data object containing the packet, connection, and metadata.
+   */
   data() {
     return {
       packet: this.packet.raw,
@@ -232,10 +340,23 @@ export class DNSResponse extends EventEmitter {
   }
 }
 
+/**
+ * Default class representing a DNS Request.
+ * 
+ * DNS Requests contain the serialized packet data, and data about the connection.
+ * 
+ */
 export class DNSRequest implements CanAnswer<DNSResponse> {
   readonly packet: PacketWrapper;
+
+  /** The connection object representing the client connection */
   connection: Connection;
+
+  /** The metadata object for the response */
   metadata: MessageMetadata;
+
+  /** Any extra data that can be attached to the request.
+   * Handlers should use this object to attach any extra metadata if desired */
   extra: object | undefined;
 
   constructor(packet: dnsPacket.Packet, connection: Connection) {
@@ -250,14 +371,25 @@ export class DNSRequest implements CanAnswer<DNSResponse> {
     };
   }
 
+
+  /**
+   * Return a new DNSResponse object that contains a DNS packet response equivalent to the request.
+   * 
+   * @returns A DNSResponse object that can be used to send a response to the client.
+   */
   toAnswer(): DNSResponse {
     const newPacket: dnsPacket.Packet = {
-      ...this.packet.raw,
+      ..._cloneDeep(this.packet.raw),
       type: 'response',
     };
     return new DNSResponse(newPacket, this.connection, this.metadata);
   }
 
+  /**
+   * Return an object representing the data contained in the request.
+   * 
+   * @returns The data object containing the packet, connection, and metadata.
+   */
   data() {
     return {
       packet: this.packet.raw,
