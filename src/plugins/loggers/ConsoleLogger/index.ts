@@ -11,7 +11,7 @@ export class ConsoleLogger implements Logger {
     res.once('done', () => {
       if (res.packet.answers.length > 0) {
         console.log(
-          `[ANSWER] ${res.packet.answers[0].name} ${res.packet.answers[0].type} ${JSON.stringify(res.packet.answers[0].data)} (took ${Number(res.metadata.ts.responseTimeNs! - res.metadata.ts.requestTimeNs!)/1000}µs)`,
+          `[ANSWER] ${res.packet.answers[0].name} ${res.packet.answers[0].type} ${JSON.stringify(res.packet.answers[0].data)} (took ${Number(res.metadata.ts.responseTimeNs! - res.metadata.ts.requestTimeNs!) / 1000}µs)`,
         );
       }
     });

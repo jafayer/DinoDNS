@@ -155,7 +155,7 @@ export class DNSResponse extends EventEmitter {
     this.connection = connection;
 
     this.metadata = metadata || {
-      ts: {}
+      ts: {},
     };
   }
 
@@ -167,8 +167,8 @@ export class DNSResponse extends EventEmitter {
         ...this.metadata.ts,
         responseTimeMs: Date.now(),
         responseTimeNs: process.hrtime.bigint(),
-      }
-    }
+      },
+    };
     this.emit('done', { ...this.packet.raw });
   }
 
