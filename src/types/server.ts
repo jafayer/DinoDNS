@@ -347,7 +347,6 @@ export interface CanAnswer<T> {
   toAnswer(): T;
 }
 
-
 /**
  * Default class representing a DNS Request.
  *
