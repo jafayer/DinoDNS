@@ -1,6 +1,5 @@
 import dnsPacket from 'dns-packet';
 import { Connection } from '../common/network';
-import { CanAnswer } from '../common/serializer';
 import { CombineFlags, RCode } from '../common/core/utils';
 import { EventEmitter } from 'events';
 import { SupportedAnswer, SupportedQuestion } from '../types/dns';
@@ -73,7 +72,7 @@ export class DuplicateAnswerForRequest extends Error {
  * This class is not generic because it heavily relies on the structure of the `Packet` type from
  * `dns-packet`. If the `Packet` type changes, this class will need to be updated.
  */
-class PacketWrapper {
+export class PacketWrapper {
   /** The raw DNS packet */
   raw: dnsPacket.Packet;
 
@@ -339,6 +338,15 @@ export class DNSResponse extends EventEmitter {
     };
   }
 }
+
+/**
+ * A trait that defines an object (typically a request object)
+ * that can be converted to a DNS answer object.
+ */
+export interface CanAnswer<T> {
+  toAnswer(): T;
+}
+
 
 /**
  * Default class representing a DNS Request.
