@@ -93,7 +93,7 @@ export class DefaultServer implements DNSServer<dnsPacket.Packet> {
     }
     const handlers = this.router.match(name);
 
-    handlers(req, res, (err) => {
+    handlers(req, res, (err?: Error) => {
       if (err) {
         console.error(err);
       }
