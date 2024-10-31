@@ -37,11 +37,11 @@ export class DefaultStore extends EventEmitter implements Store {
 
   /**
    * Retrieve information about a zone in the database.
-   * 
+   *
    * @param domain The domain to get
    * @param rType The record type to get
    * @param wildcards Whether to resolve wildcard records
-   * @returns The data for the given domain and record type, or null if no data is found 
+   * @returns The data for the given domain and record type, or null if no data is found
    */
   get<T extends SupportedRecordType>(
     domain: string,
@@ -89,7 +89,7 @@ export class DefaultStore extends EventEmitter implements Store {
 
   /**
    * Append information about a zone in the database.
-   * 
+   *
    * @param domain The domain to append data for
    * @param type The record type to append
    * @param data The data to append
@@ -103,14 +103,14 @@ export class DefaultStore extends EventEmitter implements Store {
 
   /**
    * Delete information about a zone in the database.
-   * 
+   *
    * If no type is provided, all data for the domain should be deleted.
    * If no data is provided, all data of the given type should be deleted.
-   * 
+   *
    * @param domain The domain to delete data from
    * @param type Optional. The record type to delete
    * @param data Optional. The data to delete
-   * @returns 
+   * @returns
    */
   delete<T extends SupportedRecordType>(domain: string, type?: T, data?: ZoneData[T]): void {
     if (!type) {
@@ -176,11 +176,11 @@ export class DefaultStore extends EventEmitter implements Store {
 
   /**
    * Emit a cache request event.
-   * 
+   *
    * This event is emitted when the store asks any consumers to cache data.
-   * 
+   *
    * This event will be fired if the `shouldCache` option is set to true.
-   * 
+   *
    * @param zone The zone to cache the record for
    * @param rType The record type to cache
    * @param records The records to cache
@@ -195,7 +195,7 @@ export class DefaultStore extends EventEmitter implements Store {
 
   /**
    * Serialize the store to a string. This is useful for persisting the store to disk.
-   * 
+   *
    * @returns The serialized store
    */
   toString() {
@@ -217,7 +217,7 @@ export class DefaultStore extends EventEmitter implements Store {
 
   /**
    * Deserialize a store from a string.
-   * 
+   *
    * @param str The string to deserialize
    * @returns The deserialized store
    */

@@ -4,8 +4,8 @@ import { Awaitable } from '../../common/core/utils';
 
 /**
  * A cache is a database that stores information about zones.
- * 
- * Caches differ from stores in that they are designed to be relatively ephemeral, and 
+ *
+ * Caches differ from stores in that they are designed to be relatively ephemeral, and
  * they do not make attempts to resolve wildcard records. All cache lookups should be
  * O(1) operations and should be as fast as possible.
  */

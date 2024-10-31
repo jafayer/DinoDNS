@@ -5,7 +5,7 @@ import { Awaitable } from '../../common/core/utils';
 
 /**
  * A store is a database that stores information about zones.
- * 
+ *
  * Stores can take any form, from a simple in-memory store to a store that persists data to disk.
  * They don't necessarily need to have any formal database backing them, but they should be able
  * to deterministically store and retrieve data and resolve wildcard records.

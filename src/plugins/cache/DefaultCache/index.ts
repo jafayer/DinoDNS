@@ -10,10 +10,10 @@ export type DefaultCacheOptions = {
 
 /**
  * A simple in-memory cache that stores data in a Map.
- * 
+ *
  * The default cache is a simple map that stores domain/record type pairs as keys and
  * the corresponding data as values.
- * 
+ *
  * The cache makes no attempt to implement an LRU eviction policy, as these can be
  * computationally expensive to manage and may not necessarily provide a significant benefit
  * over a simple random eviction policy. Domains that are queried often will naturally get
@@ -35,7 +35,7 @@ export class DefaultCache extends Cache {
 
   /**
    * Get information about a zone/record type pair in the cache.
-   * 
+   *
    * @param zone The zone to get data for
    * @param rType The record type to get data for.
    * @returns The data for the given zone and record type, or null if no data is found.
@@ -47,7 +47,7 @@ export class DefaultCache extends Cache {
 
   /**
    * Set or update information about a zone in the cache.
-   * 
+   *
    * @param zone The zone to set
    * @param rType The record type to set
    * @param data The data to set
@@ -69,7 +69,7 @@ export class DefaultCache extends Cache {
 
   /**
    * Append information about a zone in the cache.
-   * 
+   *
    * @param zone The zone to append
    * @param rType The record type to append
    * @param data The data to append
@@ -88,7 +88,7 @@ export class DefaultCache extends Cache {
 
   /**
    * Delete information about a zone in the cache.
-   * 
+   *
    * @param zone The zone to delete
    * @param rType The record type to delete
    * @param data The data to delete
@@ -111,11 +111,11 @@ export class DefaultCache extends Cache {
 
   /**
    * Get the current size of the cache.
-   * 
+   *
    * Note that this refers to the number of unique zone/record type pairs in the cache,
    * not the total number of records stored, as each zone/record type pair can store
    * one or more records.
-   * 
+   *
    * @returns The number of unique zone/record type pairs in the cache.
    */
   get size() {
@@ -166,12 +166,12 @@ export class DefaultCache extends Cache {
 
   /**
    * Get the key for a given zone and record type.
-   * 
+   *
    * The default key format is `zone:rType`.
-   * 
+   *
    * @param zone The zone to get the key for
    * @param rType The record type to get the key for
-   * @returns 
+   * @returns
    */
   static getKey(zone: string, rType: SupportedRecordType) {
     return `${zone}:${rType}`;
