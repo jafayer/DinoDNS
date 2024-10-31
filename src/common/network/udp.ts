@@ -93,8 +93,8 @@ export class DNSOverUDP implements Network<dnsPacket.Packet> {
     });
   }
 
-  async listen(address?: string, port?: number, callback?: () => void): Promise<void> {
-    this.server.bind(port || this.port, address || this.address, callback);
+  async listen(callback?: () => void): Promise<void> {
+    this.server.bind(this.port, this.address, callback);
 
     return;
   }

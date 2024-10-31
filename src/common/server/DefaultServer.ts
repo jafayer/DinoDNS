@@ -120,9 +120,7 @@ export class DefaultServer implements DNSServer<dnsPacket.Packet> {
 
   start(callback: () => void): void {
     for (const network of this.networks) {
-      network.listen(network.address, network.port, () => {
-        console.log(`Listening over ${network.networkType} on ${network.address}:${network.port}`);
-      });
+      network.listen();
     }
 
     callback();

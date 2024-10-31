@@ -62,8 +62,8 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
     });
   }
 
-  async listen(address?: string, port?: number, callback?: () => void): Promise<void> {
-    this.server.listen(port || this.port, address || this.address, callback);
+  async listen(callback?: () => void): Promise<void> {
+    this.server.listen(this.port, this.address, callback);
 
     return;
   }
