@@ -10,15 +10,15 @@ export interface NetworkHandler<T> {
  *
  * The network interface is extensible to any network protocol, such as TCP, UDP, or HTTP.
  *
- * Network should define basic methods to handle
+ * Network should define basic methods to handle incoming requests and send outgoing responses.
+ *
+ * They should also
  */
 export interface Network<T> {
-  address: string;
-  port: number;
   networkType: SupportedNetworkType;
 
   serializer: Serializer<T>;
-  listen(address?: string, port?: number, callback?: () => void): void;
+  listen(callback?: () => void): void;
   close(): void;
   handler?: NetworkHandler<T>;
 
