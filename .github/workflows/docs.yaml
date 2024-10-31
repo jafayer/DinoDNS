@@ -28,7 +28,7 @@ jobs:
 
       - name: Build
         run: npm run docs:build
-      
+
       - name: Upload Build Artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -37,7 +37,7 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     needs: build
-    
+
     # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
     permissions:
       pages: write # to deploy Pages
