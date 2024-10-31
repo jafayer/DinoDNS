@@ -16,4 +16,4 @@ RUN npm run build
 
 EXPOSE 1053
 
-CMD [ "node", "dist/bundle.js" ]
+CMD [ "node", "dist/index.js" ]

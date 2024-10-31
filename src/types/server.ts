@@ -3,7 +3,7 @@ import { Connection } from '../common/network';
 import { CanAnswer } from '../common/serializer';
 import { CombineFlags, RCode } from '../common/core/utils';
 import { EventEmitter } from 'events';
-import { SupportedAnswer } from '../types/dns';
+import { SupportedAnswer, SupportedQuestion } from '../types/dns';
 
 export interface NextFunction {
   (err?: Error): void;
@@ -75,8 +75,8 @@ class PacketWrapper {
     this.raw.flags = flags;
   }
 
-  get questions(): ReadonlyArray<dnsPacket.Question> {
-    return this.raw.questions || [];
+  get questions(): ReadonlyArray<SupportedQuestion> {
+    return (this.raw.questions as ReadonlyArray<SupportedQuestion>) || [];
   }
 
   set questions(questions: dnsPacket.Question[]) {
@@ -97,11 +97,11 @@ class PacketWrapper {
     this.raw.answers = answers || [];
   }
 
-  get additionals(): ReadonlyArray<SupportedAnswer> {
-    return (this.raw.additionals || []) as ReadonlyArray<SupportedAnswer>;
+  get additionals(): ReadonlyArray<dnsPacket.Answer> {
+    return (this.raw.additionals || []) as ReadonlyArray<dnsPacket.Answer>;
   }
 
-  set additionals(additionals: SupportedAnswer[]) {
+  set additionals(additionals: dnsPacket.Answer[]) {
     if (this.frozen) {
       throw new ModifiedAfterSentError();
     }

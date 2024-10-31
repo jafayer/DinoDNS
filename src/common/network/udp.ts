@@ -1,11 +1,43 @@
 import { Network, NetworkHandler, SupportedNetworkType, Connection } from './net';
 import { Serializer } from '../serializer';
 import dgram from 'dgram';
-import dnsPacket from 'dns-packet';
+import dnsPacket, { TRUNCATED_RESPONSE } from 'dns-packet';
 import { RCode, CombineFlags } from '../core/utils';
 
 export class UDPSerializer implements Serializer<dnsPacket.Packet> {
   encode(packet: dnsPacket.Packet): Buffer {
+    let packetSize = dnsPacket.encodingLength(packet);
+    if (packetSize > 512) {
+      // bitwise OR to include the truncated response flag
+      const newFlags = (packet.flags || 0) | TRUNCATED_RESPONSE;
+      packet.flags = newFlags;
+    }
+
+    while (packetSize > 512) {
+      if (packet.additionals && packet.additionals.length) {
+        packet.additionals = [];
+
+        packetSize = dnsPacket.encodingLength(packet);
+        continue;
+      }
+
+      if (packet.authorities && packet.authorities.length) {
+        packet.authorities = [];
+
+        packetSize = dnsPacket.encodingLength(packet);
+        continue;
+      }
+
+      if (packet.answers && packet.answers.length) {
+        packet.answers = packet.answers.slice(0, packet.answers.length - 1);
+
+        packetSize = dnsPacket.encodingLength(packet);
+        continue;
+      }
+
+      break;
+    }
+
     return dnsPacket.encode(packet);
   }
 
@@ -47,13 +79,22 @@ export class DNSOverUDP implements Network<dnsPacket.Packet> {
       }
 
       const packet = this.serializer.decode(msg);
-      const resp = await this.handler(packet, this.toConnection(rinfo));
-      this.server.send(new Uint8Array(this.serializer.encode(resp.packet.raw)), rinfo.port, rinfo.address);
+      this.handler(packet, this.toConnection(rinfo))
+        .then((resp) => {
+          this.server.send(new Uint8Array(this.serializer.encode(resp.packet.raw)), rinfo.port, rinfo.address);
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    });
+
+    this.server.on('error', (err) => {
+      console.error(err);
     });
   }
 
-  async listen(address?: string, port?: number, callback?: () => void): Promise<void> {
-    this.server.bind(port || this.port, address || this.address, callback);
+  async listen(callback?: () => void): Promise<void> {
+    this.server.bind(this.port, this.address, callback);
 
     return;
   }
