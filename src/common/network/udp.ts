@@ -4,6 +4,10 @@ import dgram from 'dgram';
 import dnsPacket, { TRUNCATED_RESPONSE } from 'dns-packet';
 import { RCode, CombineFlags } from '../core/utils';
 
+/**
+ * Serializer for the UDP protocol. The `dns-packet` module's
+ * `decode` and `encode` methods are passed directly through here.
+ */
 export class UDPSerializer implements Serializer<dnsPacket.Packet> {
   encode(packet: dnsPacket.Packet): Buffer {
     let packetSize = dnsPacket.encodingLength(packet);
@@ -47,18 +51,17 @@ export class UDPSerializer implements Serializer<dnsPacket.Packet> {
 }
 
 /**
- * Serializer for the UDP protocol. The `dns-packet` module's
- * `decode` and `encode` methods are passed directly through here.
+ * DNSOverUDP is a network interface for handling DNS requests over UDP.
  */
 export class DNSOverUDP implements Network<dnsPacket.Packet> {
   private server: dgram.Socket;
   public serializer: Serializer<dnsPacket.Packet>;
   public networkType: SupportedNetworkType = SupportedNetworkType.UDP;
+  public handler?: NetworkHandler<dnsPacket.Packet>
 
   constructor(
     public address: string,
     public port: number,
-    public handler?: NetworkHandler<dnsPacket.Packet>,
   ) {
     this.server = dgram.createSocket('udp4');
     this.serializer = new UDPSerializer();

@@ -17,15 +17,18 @@ export class TCPSerializer implements Serializer<dnsPacket.Packet> {
   }
 }
 
+/**
+ * DNSOverTCP is a network interface for handling DNS requests over TCP.
+ */
 export class DNSOverTCP implements Network<dnsPacket.Packet> {
   private server: net.Server;
   public serializer: TCPSerializer;
   public networkType: SupportedNetworkType = SupportedNetworkType.TCP;
+  public handler?: NetworkHandler<dnsPacket.Packet>;
 
   constructor(
     public address: string,
     public port: number,
-    public handler?: NetworkHandler<dnsPacket.Packet>,
   ) {
     this.server = net.createServer();
     this.serializer = new TCPSerializer();
