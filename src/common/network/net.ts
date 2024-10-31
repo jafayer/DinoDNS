@@ -11,8 +11,6 @@ export interface NetworkHandler<T> {
  * The network interface is extensible to any network protocol, such as TCP, UDP, or HTTP.
  *
  * Network should define basic methods to handle incoming requests and send outgoing responses.
- *
- * They should also
  */
 export interface Network<T> {
   /** The type of network being used */
