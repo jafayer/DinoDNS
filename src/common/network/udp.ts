@@ -57,7 +57,7 @@ export class DNSOverUDP implements Network<dnsPacket.Packet> {
   private server: dgram.Socket;
   public serializer: Serializer<dnsPacket.Packet>;
   public networkType: SupportedNetworkType = SupportedNetworkType.UDP;
-  public handler?: NetworkHandler<dnsPacket.Packet>
+  public handler?: NetworkHandler<dnsPacket.Packet>;
 
   constructor(
     public address: string,
