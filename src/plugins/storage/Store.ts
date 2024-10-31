@@ -1,4 +1,4 @@
-import { Handler } from '../../common/server';
+import { Handler } from '../../types/server';
 import { ZoneData, SupportedRecordType } from '../../types/dns';
 import { EventEmitter } from 'events';
 import { Awaitable } from '../../common/core/utils';
