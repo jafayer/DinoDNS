@@ -1,5 +1,5 @@
 import { Logger, LogLevel } from '../logger';
-import { DNSRequest, DNSResponse, NextFunction } from '../../../common/server';
+import { DNSRequest, DNSResponse, NextFunction } from '../../../types/server';
 
 export class ConsoleLogger implements Logger {
   constructor(
@@ -11,7 +11,7 @@ export class ConsoleLogger implements Logger {
     res.once('done', () => {
       if (res.packet.answers.length > 0) {
         console.log(
-          `[ANSWER] ${res.packet.answers[0].name} ${res.packet.answers[0].type} ${JSON.stringify(res.packet.answers[0].data)} (took ${Date.now() - res.connection.ts}ms)`,
+          `[ANSWER] ${res.packet.answers[0].name} ${res.packet.answers[0].type} ${JSON.stringify(res.packet.answers[0].data)} (took ${Number(res.metadata.ts.responseTimeNs! - res.metadata.ts.requestTimeNs!) / 1000}µs)`,
         );
       }
     });

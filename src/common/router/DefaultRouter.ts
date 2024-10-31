@@ -1,7 +1,15 @@
 import { Router, MatchedHandlers } from './router';
 import { domainToRegexp } from '../core/domainToRegexp';
-import { Handler } from '../server';
+import { Handler } from '../../types/server';
 
+/**
+ * The default router is a simple router that matches domains to handlers
+ * via a linear search of regualar expressions.
+ *
+ * This router is a simple implementation and may eventually be replaced with a more
+ * efficient implementation if benchmarks show that there are significant performance gains
+ * with another data structure such as a trie or a radix tree.
+ */
 export class DefaultRouter implements Router {
   private handlers: MatchedHandlers[] = [];
   private middleware: Handler[] = [];

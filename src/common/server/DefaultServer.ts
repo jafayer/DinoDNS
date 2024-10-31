@@ -93,7 +93,7 @@ export class DefaultServer implements DNSServer<dnsPacket.Packet> {
     }
     const handlers = this.router.match(name);
 
-    handlers(req, res, (err) => {
+    handlers(req, res, (err?: Error) => {
       if (err) {
         console.error(err);
       }
@@ -118,12 +118,14 @@ export class DefaultServer implements DNSServer<dnsPacket.Packet> {
     this.router.handle(domain, handler);
   }
 
-  start(callback: () => void): void {
+  start(callback?: () => void): void {
     for (const network of this.networks) {
       network.listen();
     }
 
-    callback();
+    if (callback) {
+      callback();
+    }
   }
 
   stop(): void {
