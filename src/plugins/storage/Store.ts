@@ -3,6 +3,13 @@ import { ZoneData, SupportedRecordType } from '../../types/dns';
 import { EventEmitter } from 'events';
 import { Awaitable } from '../../common/core/utils';
 
+/**
+ * A store is a database that stores information about zones.
+ * 
+ * Stores can take any form, from a simple in-memory store to a store that persists data to disk.
+ * They don't necessarily need to have any formal database backing them, but they should be able
+ * to deterministically store and retrieve data and resolve wildcard records.
+ */
 export abstract class Store extends EventEmitter {
   /**
    * Retrieve information about a zone in the database.
@@ -35,7 +42,7 @@ export abstract class Store extends EventEmitter {
   abstract append<T extends SupportedRecordType>(zone: string, rType: T, data: ZoneData[T]): Awaitable<void>;
 
   /**
-   *
+   * Delete information about a zone in the database.
    * @param zone the zone to delete
    * @param rType the record type to delete. If not provided, all records in the zone should be deleted.
    * @param data the data to delete. If not provided, all records of the given type should be deleted.
