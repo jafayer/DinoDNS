@@ -1,12 +1,14 @@
-import { server, network, store, logging } from '../..';
+import { ConsoleLogger } from '../../plugins/loggers';
+import { DefaultStore } from '../../plugins/storage';
+import { DNSOverTCP, DNSOverUDP, DefaultServer } from '../../common';
 
-const logger = new logging.ConsoleLogger(true, true);
+const logger = new ConsoleLogger(true, true);
 
-const st = new store.DefaultStore();
+const st = new DefaultStore();
 st.set('*', 'TXT', 'Hello, world!');
 
-const s = new server.DefaultServer({
-  networks: [new network.DNSOverTCP('localhost', 1054), new network.DNSOverUDP('localhost', 1054)],
+const s = new DefaultServer({
+  networks: [new DNSOverTCP('localhost', 1054), new DNSOverUDP('localhost', 1054)],
 });
 
 s.use(logger.handler.bind(logger));

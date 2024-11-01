@@ -6,6 +6,9 @@ import { isEqual as _isEqual } from 'lodash';
 
 type TypedMap<K extends keyof T, T> = Map<K, T[K][]>;
 
+/**
+ * A simple in-memory store that stores data in a Map.
+ */
 export class DefaultStore extends EventEmitter implements Store {
   public shouldCache: boolean;
   constructor({ shouldCache = false }: { shouldCache?: boolean } = {}) {
@@ -16,6 +19,12 @@ export class DefaultStore extends EventEmitter implements Store {
   }
   data: Map<string, TypedMap<SupportedRecordType, ZoneData>> = new Map();
 
+  /**
+   * Set or update information about a zone in the database.
+   * @param domain The domain to set
+   * @param rType The record type to set
+   * @param data The data to set
+   */
   set<T extends SupportedRecordType>(domain: string, rType: T, data: ZoneData[T] | ZoneData[T][]): void {
     const record = this.data.get(domain) || (new Map() as TypedMap<SupportedRecordType, ZoneData>);
     if (!Array.isArray(data)) {
@@ -26,6 +35,14 @@ export class DefaultStore extends EventEmitter implements Store {
     this.data.set(domain, record);
   }
 
+  /**
+   * Retrieve information about a zone in the database.
+   *
+   * @param domain The domain to get
+   * @param rType The record type to get
+   * @param wildcards Whether to resolve wildcard records
+   * @returns The data for the given domain and record type, or null if no data is found
+   */
   get<T extends SupportedRecordType>(
     domain: string,
     rType?: T,
@@ -70,6 +87,13 @@ export class DefaultStore extends EventEmitter implements Store {
     return null;
   }
 
+  /**
+   * Append information about a zone in the database.
+   *
+   * @param domain The domain to append data for
+   * @param type The record type to append
+   * @param data The data to append
+   */
   append<T extends SupportedRecordType>(domain: string, type: T, data: ZoneData[T]): void {
     const record = this.data.get(domain) || (new Map() as TypedMap<SupportedRecordType, ZoneData>);
     const existing = record.get(type) || [];
@@ -77,6 +101,17 @@ export class DefaultStore extends EventEmitter implements Store {
     this.data.set(domain, record);
   }
 
+  /**
+   * Delete information about a zone in the database.
+   *
+   * If no type is provided, all data for the domain should be deleted.
+   * If no data is provided, all data of the given type should be deleted.
+   *
+   * @param domain The domain to delete data from
+   * @param type Optional. The record type to delete
+   * @param data Optional. The data to delete
+   * @returns
+   */
   delete<T extends SupportedRecordType>(domain: string, type?: T, data?: ZoneData[T]): void {
     if (!type) {
       this.data.delete(domain);
@@ -107,6 +142,9 @@ export class DefaultStore extends EventEmitter implements Store {
     }
   }
 
+  /**
+   * The handler for the store, used in the framework to answer queries.
+   */
   handler(req: DNSRequest, res: DNSResponse, next: NextFunction) {
     if (res.finished) {
       return next();
@@ -136,6 +174,17 @@ export class DefaultStore extends EventEmitter implements Store {
     next();
   }
 
+  /**
+   * Emit a cache request event.
+   *
+   * This event is emitted when the store asks any consumers to cache data.
+   *
+   * This event will be fired if the `shouldCache` option is set to true.
+   *
+   * @param zone The zone to cache the record for
+   * @param rType The record type to cache
+   * @param records The records to cache
+   */
   async emitCacheRequest<T extends SupportedRecordType>(zone: string, rType: T, records: ZoneData[T][]) {
     this.emit('cacheRequest', {
       zoneName: zone,
@@ -144,6 +193,11 @@ export class DefaultStore extends EventEmitter implements Store {
     });
   }
 
+  /**
+   * Serialize the store to a string. This is useful for persisting the store to disk.
+   *
+   * @returns The serialized store
+   */
   toString() {
     return JSON.stringify(
       Object.fromEntries(
@@ -161,6 +215,12 @@ export class DefaultStore extends EventEmitter implements Store {
     );
   }
 
+  /**
+   * Deserialize a store from a string.
+   *
+   * @param str The string to deserialize
+   * @returns The deserialized store
+   */
   static fromString(str: string) {
     const obj = JSON.parse(str) as { [key: string]: { [key in SupportedRecordType]: ZoneData[key][] } };
     const store = new DefaultStore();

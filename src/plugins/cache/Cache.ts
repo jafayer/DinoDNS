@@ -2,6 +2,13 @@ import { Handler } from '../../types/server';
 import { ZoneData, SupportedRecordType } from '../../types/dns';
 import { Awaitable } from '../../common/core/utils';
 
+/**
+ * A cache is a database that stores information about zones.
+ *
+ * Caches differ from stores in that they are designed to be relatively ephemeral, and
+ * they do not make attempts to resolve wildcard records. All cache lookups should be
+ * O(1) operations and should be as fast as possible.
+ */
 export abstract class Cache {
   /**
    * Get information about a zone in the cache.
@@ -45,6 +52,9 @@ export abstract class Cache {
    */
   abstract delete<T extends SupportedRecordType>(zone: string, rType: T, data?: ZoneData[T]): Awaitable<void>;
 
+  /**
+   * Clear the cache.
+   */
   abstract clear(): Awaitable<void>;
 
   abstract handler: Handler;
