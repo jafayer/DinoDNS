@@ -1,3 +1,7 @@
+import { Handler } from '../../types';
+import { Cache } from '../../plugins/cache';
+import { ZoneData } from '../../types';
+
 export type Awaitable<T> = T | Promise<T>;
 
 export enum RCode {
@@ -51,3 +55,21 @@ export function overrideFlags(buffer: Buffer, flags: number): Buffer {
   bufferCopy.writeUInt16BE(flags, 2);
   return bufferCopy;
 }
+
+export const registerCache = (cache: Cache): Handler => {
+  return (req, res, next) => {
+    res.on('done', () => {
+      // register the cache on the response
+      if (!req.packet.answers || !res.packet.answers.length) return;
+
+      type t = (typeof req.packet.questions)[0]['type'];
+      cache.set<t>(
+        req.packet.questions[0].name,
+        req.packet.questions[0].type,
+        req.packet.answers.map(({ data }) => data as ZoneData[t]),
+      );
+    });
+
+    next();
+  };
+};
