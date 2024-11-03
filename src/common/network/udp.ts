@@ -66,10 +66,8 @@ export class DNSOverUDP implements Network<dnsPacket.Packet> {
   public networkType: SupportedNetworkType = SupportedNetworkType.UDP;
   public handler?: NetworkHandler<dnsPacket.Packet>;
 
-  constructor(
-    {address, port}: DNSOverUDPProps
-  ) {
-    this.address = address; 
+  constructor({ address, port }: DNSOverUDPProps) {
+    this.address = address;
     this.port = port;
     this.server = dgram.createSocket('udp4');
     this.serializer = new UDPSerializer();

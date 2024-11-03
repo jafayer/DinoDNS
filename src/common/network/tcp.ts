@@ -33,9 +33,7 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
   public networkType: SupportedNetworkType = SupportedNetworkType.TCP;
   public handler?: NetworkHandler<dnsPacket.Packet>;
 
-  constructor(
-    {address, port}: DNSOverTCPProps
-  ) {
+  constructor({ address, port }: DNSOverTCPProps) {
     this.address = address;
     this.port = port;
     this.server = net.createServer();
