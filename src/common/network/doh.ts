@@ -1,19 +1,14 @@
 import http2 from 'http2';
-import { Network, NetworkHandler, SupportedNetworkType, Connection } from './net';
+import { Network, NetworkHandler, SupportedNetworkType, Connection, SSLConfig } from './net';
 import { EventEmitter } from 'events';
 import { DNSPacketSerializer } from '../serializer';
 import dnsPacket from 'dns-packet';
-
-export interface SSLProps {
-  key: string;
-  cert: string;
-}
 
 export interface DoHProps {
   address: string;
   httpPort?: number;
   httpsPort?: number;
-  ssl?: SSLProps;
+  ssl?: SSLConfig;
 }
 
 /**

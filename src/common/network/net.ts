@@ -87,3 +87,8 @@ export interface Connection {
   /** The type of network being used */
   type: SupportedNetworkType;
 }
+
+export interface SSLConfig {
+  key: Buffer;
+  cert: Buffer;
+}
