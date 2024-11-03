@@ -1,7 +1,8 @@
 import net from 'net';
+import tls from 'tls';
 import { Serializer } from '../serializer';
 import dnsPacket from 'dns-packet';
-import { Network, NetworkHandler, SupportedNetworkType, Connection } from './net';
+import { Network, NetworkHandler, SupportedNetworkType, Connection, SSLConfig } from './net';
 
 /**
  * Serializer for the TCP protocol. The `dns-packet` module's
@@ -20,6 +21,8 @@ export class TCPSerializer implements Serializer<dnsPacket.Packet> {
 export interface DNSOverTCPProps {
   address: string;
   port: number;
+  ssl?: SSLConfig;
+  serializer?: TCPSerializer;
 }
 
 /**
@@ -28,23 +31,26 @@ export interface DNSOverTCPProps {
 export class DNSOverTCP implements Network<dnsPacket.Packet> {
   public address: string;
   public port: number;
-  private server: net.Server;
+  public server: net.Server | tls.Server;
+  private ssl?: SSLConfig;
   public serializer: TCPSerializer;
-  public networkType: SupportedNetworkType = SupportedNetworkType.TCP;
+  public networkType: SupportedNetworkType.TCP | SupportedNetworkType.TLS;
   public handler?: NetworkHandler<dnsPacket.Packet>;
 
-  constructor({ address, port }: DNSOverTCPProps) {
+  constructor({ address, port, ssl, serializer }: DNSOverTCPProps) {
     this.address = address;
     this.port = port;
-    this.server = net.createServer();
-    this.serializer = new TCPSerializer();
 
-    this.server.on('connection', (socket) => {
+    this.server = ssl ? tls.createServer({ key: ssl.key, cert: ssl.cert }) : net.createServer();
+    this.serializer = serializer || new TCPSerializer();
+    this.networkType = ssl ? SupportedNetworkType.TLS : SupportedNetworkType.TCP;
+
+    this.server.on(ssl ? 'secureConnection' : 'connection', (socket: net.Socket) => {
       if (!this.handler) {
         throw new Error('No handler defined for DNSOverTCP');
       }
 
-      socket.on('data', async (data) => {
+      socket.on('data', async (data: Buffer) => {
         if (!this.handler) {
           throw new Error('No handler defined for DNSOverTCP');
         }
