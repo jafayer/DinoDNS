@@ -11,8 +11,8 @@ st.set('*', 'TXT', 'Hello, world!');
 
 const s = new DefaultServer({
   networks: [
-    new DNSOverTCP('localhost', 1054),
-    new DNSOverUDP('localhost', 1054),
+    new DNSOverTCP({address: 'localhost', port: 1054}),
+    new DNSOverUDP({address: 'localhost', port: 1054}),
     new DNSOverHTTP({
       httpPort: 1080,
       httpsPort: 1443,

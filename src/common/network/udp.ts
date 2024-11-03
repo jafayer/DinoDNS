@@ -50,19 +50,27 @@ export class UDPSerializer implements Serializer<dnsPacket.Packet> {
   }
 }
 
+export interface DNSOverUDPProps {
+  address: string;
+  port: number;
+}
+
 /**
  * DNSOverUDP is a network interface for handling DNS requests over UDP.
  */
 export class DNSOverUDP implements Network<dnsPacket.Packet> {
+  public address: string;
+  public port: number;
   private server: dgram.Socket;
   public serializer: Serializer<dnsPacket.Packet>;
   public networkType: SupportedNetworkType = SupportedNetworkType.UDP;
   public handler?: NetworkHandler<dnsPacket.Packet>;
 
   constructor(
-    public address: string,
-    public port: number,
+    {address, port}: DNSOverUDPProps
   ) {
+    this.address = address; 
+    this.port = port;
     this.server = dgram.createSocket('udp4');
     this.serializer = new UDPSerializer();
 
