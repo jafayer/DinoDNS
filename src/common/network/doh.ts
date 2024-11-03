@@ -3,7 +3,6 @@ import { Network, NetworkHandler, SupportedNetworkType, Connection } from './net
 import { EventEmitter } from 'events';
 import { DNSPacketSerializer } from '../serializer';
 import dnsPacket from 'dns-packet';
-import { DNSRequest } from '../../types';
 
 export interface SSLProps {
   key: string;
@@ -167,8 +166,7 @@ function setupServer(server: http2.Http2Server | http2.Http2SecureServer, doh: D
           stream.end();
           return;
         }
-        const request = new DNSRequest(packet, doh.toConnection(stream));
-        request.metadata.ts.requestReceived = process.hrtime.bigint();
+
         const response = await doh.handler(packet, doh.toConnection(stream));
         const body = doh.serializer.encode(response.packet.raw);
         stream.respond({

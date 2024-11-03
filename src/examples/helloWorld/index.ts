@@ -9,10 +9,14 @@ const st = new DefaultStore();
 st.set('*', 'TXT', 'Hello, world!');
 
 const s = new DefaultServer({
-  networks: [new DNSOverTCP('localhost', 1054), new DNSOverUDP('localhost', 1054), new DNSOverHTTP({
-    httpPort: 1080,
-    address: 'localhost',
-  })],
+  networks: [
+    new DNSOverTCP('localhost', 1054),
+    new DNSOverUDP('localhost', 1054),
+    new DNSOverHTTP({
+      httpPort: 1080,
+      address: 'localhost',
+    }),
+  ],
 });
 
 s.use(logger.handler.bind(logger));
