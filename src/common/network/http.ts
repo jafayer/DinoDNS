@@ -6,8 +6,7 @@ import dnsPacket from 'dns-packet';
 
 export interface DoHProps {
   address: string;
-  httpPort?: number;
-  httpsPort?: number;
+  port: number;
   ssl?: SSLConfig;
 }
 
@@ -15,54 +14,33 @@ export interface DoHProps {
  * DNSOverHTTP is a network interface for handling DNS requests over HTTP(S).
  */
 export class DNSOverHTTP extends EventEmitter implements Network<dnsPacket.Packet> {
-  public httpServer?: http2.Http2Server;
-  public httpsServer?: http2.Http2SecureServer;
+  public address: string;
+  public port: number;
+  private ssl?: SSLConfig;
+  public server: http2.Http2Server;
   public serializer: DNSPacketSerializer = new DNSPacketSerializer();
-  public networkType: SupportedNetworkType = SupportedNetworkType.HTTP;
+  public networkType: SupportedNetworkType.HTTP | SupportedNetworkType.HTTPS;
   public handler?: NetworkHandler<dnsPacket.Packet>;
 
-  constructor(public props: DoHProps) {
+  constructor({ address, port, ssl }: DoHProps) {
     super();
 
-    if (props.httpPort) {
-      this.httpServer = http2.createServer();
-      setupServer(this.httpServer, this);
-    }
+    this.address = address;
+    this.port = port;
+    this.ssl = ssl;
+    this.server = ssl ? http2.createSecureServer({ key: ssl.key, cert: ssl.cert }) : http2.createServer();
 
-    if (props.httpsPort) {
-      if (!props.ssl) {
-        throw new Error('SSL properties are required for HTTPS server');
-      }
-      this.httpsServer = http2.createSecureServer({
-        key: props.ssl.key,
-        cert: props.ssl.cert,
-      });
-      setupServer(this.httpsServer, this);
-    }
+    this.networkType = ssl ? SupportedNetworkType.HTTPS : SupportedNetworkType.HTTP;
+
+    setupServer(this.server, this);
   }
 
   async listen(callback?: () => void): Promise<void> {
-    if (this.httpServer) {
-      this.httpServer.listen(this.props.httpPort, this.props.address);
-    }
-
-    if (this.httpsServer) {
-      this.httpsServer.listen(this.props.httpsPort, this.props.address);
-    }
-
-    if (callback) {
-      callback();
-    }
+    this.server.listen(this.port, callback);
   }
 
   async close(): Promise<void> {
-    if (this.httpServer) {
-      this.httpServer.close();
-    }
-
-    if (this.httpsServer) {
-      this.httpsServer.close();
-    }
+    this.server.close();
   }
 
   toConnection(stream: http2.Http2Stream): Connection {
