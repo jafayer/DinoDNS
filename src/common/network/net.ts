@@ -69,9 +69,11 @@ export interface Network<T> {
  * The supported network types.
  */
 export enum SupportedNetworkType {
-  UDP = 'udp',
-  TCP = 'tcp',
-  HTTP = 'http',
+  UDP = 'UDP',
+  TCP = 'TCP',
+  TLS = 'TLS',
+  HTTP = 'HTTP',
+  HTTPS = 'HTTPS',
 }
 
 /**
@@ -86,4 +88,9 @@ export interface Connection {
 
   /** The type of network being used */
   type: SupportedNetworkType;
+}
+
+export interface SSLConfig {
+  key: Buffer;
+  cert: Buffer;
 }
