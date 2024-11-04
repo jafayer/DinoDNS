@@ -1,7 +1,6 @@
 import dnsPacket from 'dns-packet';
 import { Connection } from '../common/network';
 import { CombineFlags, RCode } from '../common/core/utils';
-import { EventEmitter } from 'events';
 import { SupportedAnswer, SupportedQuestion } from '../types/dns';
 import _cloneDeep from 'lodash/cloneDeep';
 import { TypedEventEmitter } from '../common/core/events';
