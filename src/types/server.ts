@@ -4,6 +4,7 @@ import { CombineFlags, RCode } from '../common/core/utils';
 import { EventEmitter } from 'events';
 import { SupportedAnswer, SupportedQuestion } from '../types/dns';
 import _cloneDeep from 'lodash/cloneDeep';
+import { TypedEventEmitter } from '../common/core/events';
 
 /**
  * The NextFunction type is a callback function that is used to pass control to the next middleware.
@@ -200,12 +201,17 @@ export interface MessageMetadata {
   ts: Timings;
 }
 
+export interface DNSResponseEvents {
+  answer: DNSResponse;
+  done: DNSResponse;
+}
+
 /**
  * Default class representing a DNS Response.
  *
  * DNS Responses contain the serialized packet data, and data about the connection.
  */
-export class DNSResponse extends EventEmitter {
+export class DNSResponse extends TypedEventEmitter<DNSResponseEvents> {
   /** The packet wrapper containing the raw DNS packet */
   packet: PacketWrapper;
 
@@ -243,14 +249,7 @@ export class DNSResponse extends EventEmitter {
   protected done(): void {
     this.packet = this.packet.freeze();
     this.fin = true;
-    this.metadata = {
-      ts: {
-        ...this.metadata.ts,
-        responseTimeMs: Date.now(),
-        responseTimeNs: process.hrtime.bigint(),
-      },
-    };
-    this.emit('done', { ...this.packet.raw });
+    this.emit('answer', this);
   }
 
   get finished() {

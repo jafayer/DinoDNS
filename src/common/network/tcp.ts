@@ -3,6 +3,7 @@ import tls from 'tls';
 import { Serializer } from '../serializer';
 import dnsPacket from 'dns-packet';
 import { Network, NetworkHandler, SupportedNetworkType, Connection, SSLConfig } from './net';
+import { DNSRequest } from '../../types';
 
 /**
  * Serializer for the TCP protocol. The `dns-packet` module's
@@ -35,7 +36,7 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
   private ssl?: SSLConfig;
   public serializer: TCPSerializer;
   public networkType: SupportedNetworkType.TCP | SupportedNetworkType.TLS;
-  public handler?: NetworkHandler<dnsPacket.Packet>;
+  public handler?: NetworkHandler;
 
   constructor({ address, port, ssl, serializer }: DNSOverTCPProps) {
     this.address = address;
@@ -46,6 +47,8 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
     this.networkType = ssl ? SupportedNetworkType.TLS : SupportedNetworkType.TCP;
 
     this.server.on(ssl ? 'secureConnection' : 'connection', (socket: net.Socket) => {
+      const startTime = process.hrtime.bigint();
+      const startTimeMs = Date.now();
       if (!this.handler) {
         throw new Error('No handler defined for DNSOverTCP');
       }
@@ -55,10 +58,22 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
           throw new Error('No handler defined for DNSOverTCP');
         }
         const packet = dnsPacket.streamDecode(data);
-        this.handler(packet, this.toConnection(socket))
+        const request = new DNSRequest(packet, this.toConnection(socket));
+        request.metadata.ts.requestTimeNs = startTime; 
+        request.metadata.ts.requestTimeMs = startTimeMs;
+
+        this.handler(request)
           .then((resp) => {
             socket.write(new Uint8Array(this.serializer.encode(resp.packet.raw)));
             socket.end();
+
+            return resp;
+          })
+          .then((resp) => {
+            resp.metadata.ts.responseTimeNs = process.hrtime.bigint();
+            resp.metadata.ts.responseTimeMs = Date.now();
+            resp.emit('done', resp);
+            resp.removeAllListeners(); // cleanup
           })
           .catch((err) => {
             console.error(err);

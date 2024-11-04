@@ -49,12 +49,10 @@ export class DefaultServer implements DNSServer<dnsPacket.Packet> {
     }
 
     for (const network of this.networks) {
-      network.handler = async (packet, connection) => {
-        const req = new DNSRequest(packet, connection);
+      network.handler = async (req) => {
         const res: DNSResponse = req.toAnswer();
-
         return await new Promise<DNSResponse>((resolve) => {
-          res.once('done', () => {
+          res.once('answer', (res) => {
             resolve(res);
           });
 
