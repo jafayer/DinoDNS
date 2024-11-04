@@ -100,7 +100,7 @@ export class DNSOverUDP implements Network<dnsPacket.Packet> {
           this.server.send(new Uint8Array(this.serializer.encode(resp.packet.raw)), rinfo.port, rinfo.address);
           return resp;
         })
-        .then(resp => {
+        .then((resp) => {
           const endTime = process.hrtime.bigint();
           const endTimeMs = Date.now();
           resp.metadata.ts.responseTimeNs = endTime;

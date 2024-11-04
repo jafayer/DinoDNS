@@ -59,7 +59,7 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
         }
         const packet = dnsPacket.streamDecode(data);
         const request = new DNSRequest(packet, this.toConnection(socket));
-        request.metadata.ts.requestTimeNs = startTime; 
+        request.metadata.ts.requestTimeNs = startTime;
         request.metadata.ts.requestTimeMs = startTimeMs;
 
         this.handler(request)
