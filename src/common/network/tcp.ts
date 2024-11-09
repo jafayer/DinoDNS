@@ -46,39 +46,53 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
     this.networkType = ssl ? SupportedNetworkType.TLS : SupportedNetworkType.TCP;
 
     this.server.on(ssl ? 'secureConnection' : 'connection', (socket: net.Socket) => {
+      let socketEnded = false;
+
+      const endSocket = (err?: Error) => {
+        if (!socketEnded) {
+          socketEnded = true;
+          if (err) {
+            console.error(err);
+          }
+          socket.end();
+        }
+      };
+
       if (!this.handler) {
-        throw new Error('No handler defined for DNSOverTCP');
+        const err = new Error('No handler defined for DNSOverTCP');
+        endSocket(err);
       }
 
       socket.on('data', async (data: Buffer) => {
-        if (!this.handler) {
-          throw new Error('No handler defined for DNSOverTCP');
+        try {
+          if (!this.handler) {
+            return endSocket(new Error('No handler defined for DNSOverTCP'));
+          }
+
+          const packet = dnsPacket.streamDecode(data);
+          const response = await this.handler(packet, this.toConnection(socket));
+          if (!socketEnded) {
+            socket.write(new Uint8Array(this.serializer.encode(response.packet.raw)), (err) => {
+            endSocket(err);
+            });
+          }
+        } catch (err) {
+          endSocket(err as Error);
         }
-        const packet = dnsPacket.streamDecode(data);
-        this.handler(packet, this.toConnection(socket))
-          .then((resp) => {
-            socket.write(new Uint8Array(this.serializer.encode(resp.packet.raw)));
-            socket.end();
-          })
-          .catch((err) => {
-            console.error(err);
-            socket.end();
-          });
       });
 
       socket.on('error', (err) => {
-        console.error(err);
-        socket.end();
+        endSocket(err);
       });
 
       socket.on('end', () => {
-        socket.end();
+        endSocket();
       });
     });
   }
 
   async listen(callback?: () => void): Promise<void> {
-    this.server.listen(this.port, this.address, callback);
+    this.server.listen(this.port, this.address, 1000, callback);
 
     return;
   }
