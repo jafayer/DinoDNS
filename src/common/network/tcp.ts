@@ -49,51 +49,56 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
     this.server.on(ssl ? 'secureConnection' : 'connection', (socket: net.Socket) => {
       const startTime = process.hrtime.bigint();
       const startTimeMs = Date.now();
+      let socketEnded = false;
+
+      const endSocket = (err?: Error) => {
+        if (!socketEnded) {
+          socketEnded = true;
+          if (err) {
+            console.error(err);
+          }
+          socket.end();
+        }
+      };
+
       if (!this.handler) {
-        throw new Error('No handler defined for DNSOverTCP');
+        const err = new Error('No handler defined for DNSOverTCP');
+        endSocket(err);
       }
 
       socket.on('data', async (data: Buffer) => {
-        if (!this.handler) {
-          throw new Error('No handler defined for DNSOverTCP');
+        try {
+          if (!this.handler) {
+            return endSocket(new Error('No handler defined for DNSOverTCP'));
+          }
+
+          const packet = dnsPacket.streamDecode(data);
+          const request = new DNSRequest(packet, this.toConnection(socket));
+          const response = await this.handler(request);
+          if (!socketEnded) {
+            socket.write(new Uint8Array(this.serializer.encode(response.packet.raw)), (err) => {
+              endSocket(err);
+              response.emit('done', response);
+              response.removeAllListeners(); // cleanup
+            });
+          }
+        } catch (err) {
+          endSocket(err as Error);
         }
-        const packet = dnsPacket.streamDecode(data);
-        const request = new DNSRequest(packet, this.toConnection(socket));
-        request.metadata.ts.requestTimeNs = startTime;
-        request.metadata.ts.requestTimeMs = startTimeMs;
-
-        this.handler(request)
-          .then((resp) => {
-            socket.write(new Uint8Array(this.serializer.encode(resp.packet.raw)));
-            socket.end();
-
-            return resp;
-          })
-          .then((resp) => {
-            resp.metadata.ts.responseTimeNs = process.hrtime.bigint();
-            resp.metadata.ts.responseTimeMs = Date.now();
-            resp.emit('done', resp);
-            resp.removeAllListeners(); // cleanup
-          })
-          .catch((err) => {
-            console.error(err);
-            socket.end();
-          });
       });
 
       socket.on('error', (err) => {
-        console.error(err);
-        socket.end();
+        endSocket(err);
       });
 
       socket.on('end', () => {
-        socket.end();
+        endSocket();
       });
     });
   }
 
   async listen(callback?: () => void): Promise<void> {
-    this.server.listen(this.port, this.address, callback);
+    this.server.listen(this.port, this.address, 1000, callback);
 
     return;
   }

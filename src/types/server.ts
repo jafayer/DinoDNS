@@ -132,7 +132,7 @@ export class PacketWrapper {
     if (this.frozen) {
       throw new ModifiedAfterSentError();
     }
-    this.raw.answers = answers || [];
+    this.raw.answers = answers;
   }
 
   get additionals(): ReadonlyArray<dnsPacket.Answer> {
@@ -143,7 +143,18 @@ export class PacketWrapper {
     if (this.frozen) {
       throw new ModifiedAfterSentError();
     }
-    this.raw.additionals = additionals || [];
+    this.raw.additionals = additionals;
+  }
+
+  get authorities(): ReadonlyArray<dnsPacket.Answer> {
+    return (this.raw.authorities || []) as ReadonlyArray<dnsPacket.Answer>;
+  }
+
+  set authorities(authority: dnsPacket.Answer[]) {
+    if (this.frozen) {
+      throw new ModifiedAfterSentError();
+    }
+    this.raw.authorities = authority;
   }
 
   /**
