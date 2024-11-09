@@ -13,11 +13,11 @@ const sslConfig = {
 };
 const s = new DefaultServer({
   networks: [
-    new DNSOverTCP({ address: 'localhost', port: 1054 }),
-    new DNSOverUDP({ address: 'localhost', port: 1054 }),
-    new DNSOverTCP({ address: 'localhost', port: 1853, ssl: sslConfig }),
-    new DNSOverHTTP({ address: 'localhost', port: 1080 }),
-    new DNSOverHTTP({ address: 'localhost', port: 1443, ssl: sslConfig }),
+    new DNSOverTCP({ address: '0.0.0.0', port: 1054 }),
+    new DNSOverUDP({ address: '0.0.0.0', port: 1054 }),
+    new DNSOverTCP({ address: '0.0.0.0', port: 1853, ssl: sslConfig }),
+    new DNSOverHTTP({ address: '0.0.0.0', port: 1080 }),
+    new DNSOverHTTP({ address: '0.0.0.0', port: 1443, ssl: sslConfig }),
   ],
 });
 
