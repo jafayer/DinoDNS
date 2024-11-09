@@ -73,7 +73,7 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
           const response = await this.handler(packet, this.toConnection(socket));
           if (!socketEnded) {
             socket.write(new Uint8Array(this.serializer.encode(response.packet.raw)), (err) => {
-            endSocket(err);
+              endSocket(err);
             });
           }
         } catch (err) {
