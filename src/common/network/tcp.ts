@@ -74,6 +74,8 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
 
           const packet = dnsPacket.streamDecode(data);
           const request = new DNSRequest(packet, this.toConnection(socket));
+          request.metadata.ts.requestTimeNs = startTime; // override the request time with the time the request was received
+          request.metadata.ts.requestTimeMs = startTimeMs; // override the request time with the time the request was received
           const response = await this.handler(request);
           if (!socketEnded) {
             socket.write(new Uint8Array(this.serializer.encode(response.packet.raw)), (err) => {
