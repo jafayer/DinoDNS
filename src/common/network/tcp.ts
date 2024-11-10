@@ -3,6 +3,7 @@ import tls from 'tls';
 import { Serializer } from '../serializer';
 import dnsPacket from 'dns-packet';
 import { Network, NetworkHandler, SupportedNetworkType, Connection, SSLConfig } from './net';
+import { DNSRequest } from '../../types';
 
 /**
  * Serializer for the TCP protocol. The `dns-packet` module's
@@ -35,7 +36,7 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
   private ssl?: SSLConfig;
   public serializer: TCPSerializer;
   public networkType: SupportedNetworkType.TCP | SupportedNetworkType.TLS;
-  public handler?: NetworkHandler<dnsPacket.Packet>;
+  public handler?: NetworkHandler;
 
   constructor({ address, port, ssl, serializer }: DNSOverTCPProps) {
     this.address = address;
@@ -46,6 +47,8 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
     this.networkType = ssl ? SupportedNetworkType.TLS : SupportedNetworkType.TCP;
 
     this.server.on(ssl ? 'secureConnection' : 'connection', (socket: net.Socket) => {
+      const startTime = process.hrtime.bigint();
+      const startTimeMs = Date.now();
       let socketEnded = false;
 
       const endSocket = (err?: Error) => {
@@ -70,10 +73,15 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
           }
 
           const packet = dnsPacket.streamDecode(data);
-          const response = await this.handler(packet, this.toConnection(socket));
+          const request = new DNSRequest(packet, this.toConnection(socket));
+          request.metadata.ts.requestTimeNs = startTime; // override the request time with the time the request was received
+          request.metadata.ts.requestTimeMs = startTimeMs; // override the request time with the time the request was received
+          const response = await this.handler(request);
           if (!socketEnded) {
             socket.write(new Uint8Array(this.serializer.encode(response.packet.raw)), (err) => {
               endSocket(err);
+              response.emit('done', response);
+              response.removeAllListeners(); // cleanup
             });
           }
         } catch (err) {

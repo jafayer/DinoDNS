@@ -3,6 +3,7 @@ import { Network, NetworkHandler, SupportedNetworkType, Connection, SSLConfig } 
 import { EventEmitter } from 'events';
 import { DNSPacketSerializer } from '../serializer';
 import dnsPacket from 'dns-packet';
+import { DNSRequest } from '../../types';
 
 export interface DoHProps {
   address: string;
@@ -20,7 +21,7 @@ export class DNSOverHTTP extends EventEmitter implements Network<dnsPacket.Packe
   public server: http2.Http2Server;
   public serializer: DNSPacketSerializer = new DNSPacketSerializer();
   public networkType: SupportedNetworkType.HTTP | SupportedNetworkType.HTTPS;
-  public handler?: NetworkHandler<dnsPacket.Packet>;
+  public handler?: NetworkHandler;
 
   constructor({ address, port, ssl }: DoHProps) {
     super();
@@ -92,6 +93,9 @@ function setupServer(server: http2.Http2Server | http2.Http2SecureServer, doh: D
   });
 
   server.on('stream', (stream, headers) => {
+    const startTime = process.hrtime.bigint();
+    const startTimeMs = Date.now();
+
     if (!doh.handler) {
       throw new Error('No handler defined for DNSOverHTTP');
     }
@@ -139,8 +143,10 @@ function setupServer(server: http2.Http2Server | http2.Http2SecureServer, doh: D
           stream.end();
           return;
         }
-
-        const response = await doh.handler(packet, doh.toConnection(stream));
+        const request = new DNSRequest(packet, doh.toConnection(stream));
+        request.metadata.ts.requestTimeNs = startTime;
+        request.metadata.ts.requestTimeMs = startTimeMs;
+        const response = await doh.handler(request);
         const body = doh.serializer.encode(response.packet.raw);
         stream.respond({
           ':status': 200,
@@ -148,7 +154,9 @@ function setupServer(server: http2.Http2Server | http2.Http2SecureServer, doh: D
           'Content-Length': body.length,
         });
         stream.end(body);
-        response.emit('sent', process.hrtime.bigint());
+        response.metadata.ts.responseTimeNs = process.hrtime.bigint();
+        response.metadata.ts.responseTimeMs = Date.now();
+        response.emit('done', response);
         response.removeAllListeners(); // cleanup
       } catch (err) {
         console.error(err);

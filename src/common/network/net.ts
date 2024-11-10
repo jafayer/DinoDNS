@@ -1,8 +1,8 @@
 import type { Serializer } from '../serializer';
-import type { DNSResponse } from '../../types/server';
+import type { DNSRequest, DNSResponse } from '../../types/server';
 
-export interface NetworkHandler<T> {
-  (data: T, connection: Connection): Promise<DNSResponse>;
+export interface NetworkHandler {
+  (request: DNSRequest): Promise<DNSResponse>;
 }
 /**
  * Network defines the interaction layer between the server and the network.
@@ -46,7 +46,7 @@ export interface Network<T> {
   /**
    * The handler is responsible for processing incoming requests and sending outgoing responses.
    */
-  handler?: NetworkHandler<T>;
+  handler?: NetworkHandler;
 
   /**
    * Passes the listener to the underlying network interface which may be an event emitter.

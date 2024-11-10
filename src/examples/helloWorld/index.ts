@@ -1,6 +1,6 @@
 import { ConsoleLogger } from '../../plugins/loggers';
 import { DefaultStore } from '../../plugins/storage';
-import { DNSOverTCP, DNSOverUDP, DefaultServer } from '../../common';
+import { DNSOverTCP, DNSOverUDP, DefaultServer, DNSOverHTTP } from '../../common';
 import fs from 'fs';
 
 const logger = new ConsoleLogger(true, true);
@@ -13,9 +13,11 @@ const sslConfig = {
 };
 const s = new DefaultServer({
   networks: [
-    new DNSOverTCP({ address: 'localhost', port: 1054 }),
-    new DNSOverUDP({ address: 'localhost', port: 1054 }),
-    new DNSOverTCP({ address: 'localhost', port: 1853, ssl: sslConfig }),
+    new DNSOverTCP({ address: '0.0.0.0', port: 1054 }),
+    new DNSOverUDP({ address: '0.0.0.0', port: 1054 }),
+    new DNSOverTCP({ address: '0.0.0.0', port: 1853, ssl: sslConfig }),
+    new DNSOverHTTP({ address: '0.0.0.0', port: 1080 }),
+    new DNSOverHTTP({ address: '0.0.0.0', port: 1443, ssl: sslConfig }),
   ],
 });
 
