@@ -9,6 +9,7 @@ export interface DoHProps {
   address: string;
   port: number;
   ssl?: SSLConfig;
+  maxConnections?: number;
 }
 
 /**
@@ -22,14 +23,17 @@ export class DNSOverHTTP extends EventEmitter implements Network<dnsPacket.Packe
   public serializer: DNSPacketSerializer = new DNSPacketSerializer();
   public networkType: SupportedNetworkType.HTTP | SupportedNetworkType.HTTPS;
   public handler?: NetworkHandler;
+  public maxConnections: number;
 
-  constructor({ address, port, ssl }: DoHProps) {
+  constructor({ address, port, ssl, maxConnections = Infinity }: DoHProps) {
     super();
 
     this.address = address;
     this.port = port;
     this.ssl = ssl;
+    this.maxConnections = maxConnections;
     this.server = ssl ? http2.createSecureServer({ key: ssl.key, cert: ssl.cert }) : http2.createServer();
+    this.server.maxConnections = maxConnections;
 
     this.networkType = ssl ? SupportedNetworkType.HTTPS : SupportedNetworkType.HTTP;
 
