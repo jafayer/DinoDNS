@@ -2,7 +2,6 @@ import dnsPacket from 'dns-packet';
 import { Connection } from '../common/network';
 import { CombineFlags, RCode } from '../common/core/utils';
 import { SupportedAnswer, SupportedQuestion } from '../types/dns';
-import _cloneDeep from 'lodash/cloneDeep';
 import { TypedEventEmitter } from '../common/core/events';
 
 /**
@@ -162,7 +161,10 @@ export class PacketWrapper {
    * @returns A copy of the packet wrapper
    */
   copy(): PacketWrapper {
-    return new PacketWrapper(_cloneDeep(this.raw));
+    const newRawPacket = {
+      ...this.raw,
+    };
+    return new PacketWrapper(newRawPacket);
   }
 
   /**
@@ -394,7 +396,7 @@ export class DNSRequest implements CanAnswer<DNSResponse> {
    */
   toAnswer(): DNSResponse {
     const newPacket: dnsPacket.Packet = {
-      ..._cloneDeep(this.packet.raw),
+      ...this.packet.raw,
       type: 'response',
     };
     return new DNSResponse(newPacket, this.connection, this.metadata);
