@@ -80,6 +80,8 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
           if (!socketEnded) {
             socket.write(new Uint8Array(this.serializer.encode(response.packet.raw)), (err) => {
               endSocket(err);
+              response.metadata.ts.responseTimeNs = process.hrtime.bigint();
+              response.metadata.ts.responseTimeMs = Date.now();
               response.emit('done', response);
               response.removeAllListeners(); // cleanup
             });
