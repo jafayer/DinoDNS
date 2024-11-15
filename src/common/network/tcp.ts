@@ -1,7 +1,9 @@
 import net from 'net';
+import tls from 'tls';
 import { Serializer } from '../serializer';
 import dnsPacket from 'dns-packet';
-import { Network, NetworkHandler, SupportedNetworkType, Connection } from './net';
+import { Network, NetworkHandler, SupportedNetworkType, Connection, SSLConfig } from './net';
+import { DNSRequest } from '../../types';
 
 /**
  * Serializer for the TCP protocol. The `dns-packet` module's
@@ -17,57 +19,108 @@ export class TCPSerializer implements Serializer<dnsPacket.Packet> {
   }
 }
 
+export interface DNSOverTCPProps {
+  address: string;
+  port: number;
+  ssl?: SSLConfig;
+  serializer?: TCPSerializer;
+  maxConnections?: number;
+  keepAlive?: boolean;
+  timeout?: number;
+}
+
 /**
  * DNSOverTCP is a network interface for handling DNS requests over TCP.
  */
 export class DNSOverTCP implements Network<dnsPacket.Packet> {
-  private server: net.Server;
+  public address: string;
+  public port: number;
+  public server: net.Server | tls.Server;
+  private ssl?: SSLConfig;
   public serializer: TCPSerializer;
-  public networkType: SupportedNetworkType = SupportedNetworkType.TCP;
-  public handler?: NetworkHandler<dnsPacket.Packet>;
+  public networkType: SupportedNetworkType.TCP | SupportedNetworkType.TLS;
+  public handler?: NetworkHandler;
+  public maxConnections: number;
+  public keepAlive: boolean;
+  public timeout: number;
 
-  constructor(
-    public address: string,
-    public port: number,
-  ) {
-    this.server = net.createServer();
-    this.serializer = new TCPSerializer();
+  constructor({
+    address,
+    port,
+    ssl,
+    serializer,
+    maxConnections = Infinity,
+    keepAlive = true,
+    timeout = 1000,
+  }: DNSOverTCPProps) {
+    this.address = address;
+    this.port = port;
+    this.maxConnections = maxConnections;
+    this.keepAlive = keepAlive;
+    this.timeout = timeout;
 
-    this.server.on('connection', (socket) => {
+    this.server = ssl ? tls.createServer({ key: ssl.key, cert: ssl.cert }) : net.createServer();
+    this.serializer = serializer || new TCPSerializer();
+    this.networkType = ssl ? SupportedNetworkType.TLS : SupportedNetworkType.TCP;
+    this.server.maxConnections = this.maxConnections;
+    this.server.on(ssl ? 'secureConnection' : 'connection', (socket: net.Socket) => {
+      const startTime = process.hrtime.bigint();
+      const startTimeMs = Date.now();
+      socket.setNoDelay(true);
+      socket.setKeepAlive(this.keepAlive);
+      socket.setTimeout(this.timeout);
+      let socketEnded = false;
+
+      const endSocket = (err?: Error) => {
+        if (!socketEnded) {
+          socketEnded = true;
+          if (err) {
+            console.error(err);
+          }
+          socket.end();
+        }
+      };
+
       if (!this.handler) {
-        throw new Error('No handler defined for DNSOverTCP');
+        const err = new Error('No handler defined for DNSOverTCP');
+        endSocket(err);
       }
 
-      socket.on('data', async (data) => {
-        if (!this.handler) {
-          throw new Error('No handler defined for DNSOverTCP');
+      socket.on('data', async (data: Buffer) => {
+        try {
+          if (!this.handler) {
+            return endSocket(new Error('No handler defined for DNSOverTCP'));
+          }
+
+          const packet = dnsPacket.streamDecode(data);
+          const request = new DNSRequest(packet, this.toConnection(socket));
+          request.metadata.ts.requestTimeNs = startTime; // override the request time with the time the request was received
+          request.metadata.ts.requestTimeMs = startTimeMs; // override the request time with the time the request was received
+          const response = await this.handler(request);
+          if (!socketEnded) {
+            socket.write(new Uint8Array(this.serializer.encode(response.packet.raw)), (err) => {
+              if (err) {
+                endSocket(err);
+              }
+              response.metadata.ts.responseTimeNs = process.hrtime.bigint();
+              response.metadata.ts.responseTimeMs = Date.now();
+              response.emit('done', response);
+              response.removeAllListeners(); // cleanup
+            });
+          }
+        } catch (err) {
+          endSocket(err as Error);
         }
-        const packet = dnsPacket.streamDecode(data);
-        this.handler(packet, this.toConnection(socket))
-          .then((resp) => {
-            socket.write(new Uint8Array(this.serializer.encode(resp.packet.raw)));
-            socket.end();
-          })
-          .catch((err) => {
-            console.error(err);
-            socket.end();
-          });
       });
 
       socket.on('error', (err) => {
-        console.error(err);
-        socket.end();
-      });
-
-      socket.on('end', () => {
-        socket.end();
+        endSocket(err);
       });
     });
   }
 
   async listen(callback?: () => void): Promise<void> {
     this.server.listen(this.port, this.address, callback);
-
     return;
   }
 

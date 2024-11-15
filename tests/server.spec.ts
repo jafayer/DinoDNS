@@ -6,7 +6,10 @@ import dns from 'node:dns';
 describe('server', () => {
   it('Should throw an error when it tries to respond twice to the same request', async () => {
     const server = new DefaultServer({
-      networks: [new DNSOverTCP('localhost', 8053), new DNSOverUDP('localhost', 8053)],
+      networks: [
+        new DNSOverTCP({ address: 'localhost', port: 8053 }),
+        new DNSOverUDP({ address: 'localhost', port: 8053 }),
+      ],
       defaultHandler: (req, res) => {
         res.errors.nxDomain();
       },

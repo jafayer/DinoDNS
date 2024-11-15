@@ -1,9 +1,8 @@
 import dnsPacket from 'dns-packet';
 import { Connection } from '../common/network';
 import { CombineFlags, RCode } from '../common/core/utils';
-import { EventEmitter } from 'events';
 import { SupportedAnswer, SupportedQuestion } from '../types/dns';
-import _cloneDeep from 'lodash/cloneDeep';
+import { TypedEventEmitter } from '../common/core/events';
 
 /**
  * The NextFunction type is a callback function that is used to pass control to the next middleware.
@@ -132,7 +131,7 @@ export class PacketWrapper {
     if (this.frozen) {
       throw new ModifiedAfterSentError();
     }
-    this.raw.answers = answers || [];
+    this.raw.answers = answers;
   }
 
   get additionals(): ReadonlyArray<dnsPacket.Answer> {
@@ -143,7 +142,18 @@ export class PacketWrapper {
     if (this.frozen) {
       throw new ModifiedAfterSentError();
     }
-    this.raw.additionals = additionals || [];
+    this.raw.additionals = additionals;
+  }
+
+  get authorities(): ReadonlyArray<dnsPacket.Answer> {
+    return (this.raw.authorities || []) as ReadonlyArray<dnsPacket.Answer>;
+  }
+
+  set authorities(authority: dnsPacket.Answer[]) {
+    if (this.frozen) {
+      throw new ModifiedAfterSentError();
+    }
+    this.raw.authorities = authority;
   }
 
   /**
@@ -151,7 +161,10 @@ export class PacketWrapper {
    * @returns A copy of the packet wrapper
    */
   copy(): PacketWrapper {
-    return new PacketWrapper(_cloneDeep(this.raw));
+    const newRawPacket = {
+      ...this.raw,
+    };
+    return new PacketWrapper(newRawPacket);
   }
 
   /**
@@ -200,12 +213,17 @@ export interface MessageMetadata {
   ts: Timings;
 }
 
+export interface DNSResponseEvents {
+  answer: DNSResponse;
+  done: DNSResponse;
+}
+
 /**
  * Default class representing a DNS Response.
  *
  * DNS Responses contain the serialized packet data, and data about the connection.
  */
-export class DNSResponse extends EventEmitter {
+export class DNSResponse extends TypedEventEmitter<DNSResponseEvents> {
   /** The packet wrapper containing the raw DNS packet */
   packet: PacketWrapper;
 
@@ -243,14 +261,7 @@ export class DNSResponse extends EventEmitter {
   protected done(): void {
     this.packet = this.packet.freeze();
     this.fin = true;
-    this.metadata = {
-      ts: {
-        ...this.metadata.ts,
-        responseTimeMs: Date.now(),
-        responseTimeNs: process.hrtime.bigint(),
-      },
-    };
-    this.emit('done', { ...this.packet.raw });
+    this.emit('answer', this);
   }
 
   get finished() {
@@ -385,7 +396,7 @@ export class DNSRequest implements CanAnswer<DNSResponse> {
    */
   toAnswer(): DNSResponse {
     const newPacket: dnsPacket.Packet = {
-      ..._cloneDeep(this.packet.raw),
+      ...this.packet.raw,
       type: 'response',
     };
     return new DNSResponse(newPacket, this.connection, this.metadata);

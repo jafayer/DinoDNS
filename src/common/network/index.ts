@@ -4,3 +4,4 @@ export { SupportedNetworkType } from './net';
 
 export { DNSOverUDP, UDPSerializer } from './udp';
 export { DNSOverTCP, TCPSerializer } from './tcp';
+export { DNSOverHTTP } from './http';

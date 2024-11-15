@@ -3,6 +3,7 @@ import { Serializer } from '../serializer';
 import dgram from 'dgram';
 import dnsPacket, { TRUNCATED_RESPONSE } from 'dns-packet';
 import { RCode, CombineFlags } from '../core/utils';
+import { DNSRequest } from '../../types';
 
 /**
  * Serializer for the UDP protocol. The `dns-packet` module's
@@ -50,23 +51,32 @@ export class UDPSerializer implements Serializer<dnsPacket.Packet> {
   }
 }
 
+export interface DNSOverUDPProps {
+  address: string;
+  port: number;
+  serializer?: UDPSerializer;
+}
+
 /**
  * DNSOverUDP is a network interface for handling DNS requests over UDP.
  */
 export class DNSOverUDP implements Network<dnsPacket.Packet> {
+  public address: string;
+  public port: number;
   private server: dgram.Socket;
-  public serializer: Serializer<dnsPacket.Packet>;
+  public serializer: UDPSerializer;
   public networkType: SupportedNetworkType = SupportedNetworkType.UDP;
-  public handler?: NetworkHandler<dnsPacket.Packet>;
+  public handler?: NetworkHandler;
 
-  constructor(
-    public address: string,
-    public port: number,
-  ) {
+  constructor({ address, port, serializer }: DNSOverUDPProps) {
+    this.address = address;
+    this.port = port;
     this.server = dgram.createSocket('udp4');
-    this.serializer = new UDPSerializer();
+    this.serializer = serializer || new UDPSerializer();
 
     this.server.on('message', async (msg, rinfo) => {
+      const startTime = process.hrtime.bigint();
+      const startTimeMs = Date.now();
       if (!this.handler) {
         const response = dnsPacket.encode({
           type: 'response',
@@ -82,9 +92,21 @@ export class DNSOverUDP implements Network<dnsPacket.Packet> {
       }
 
       const packet = this.serializer.decode(msg);
-      this.handler(packet, this.toConnection(rinfo))
+      const request = new DNSRequest(packet, this.toConnection(rinfo));
+      request.metadata.ts.requestTimeNs = startTime;
+      request.metadata.ts.requestTimeMs = startTimeMs;
+      this.handler(request)
         .then((resp) => {
           this.server.send(new Uint8Array(this.serializer.encode(resp.packet.raw)), rinfo.port, rinfo.address);
+          return resp;
+        })
+        .then((resp) => {
+          const endTime = process.hrtime.bigint();
+          const endTimeMs = Date.now();
+          resp.metadata.ts.responseTimeNs = endTime;
+          resp.metadata.ts.responseTimeMs = endTimeMs;
+          resp.emit('done', resp);
+          resp.removeAllListeners(); // cleanup
         })
         .catch((err) => {
           console.error(err);
