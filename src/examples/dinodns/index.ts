@@ -18,7 +18,7 @@ const server = new DinoDNS({
   cache,
   logger,
   storage: store,
-  networks: [new DNSOverTCP('0.0.0.0', 1053), new DNSOverUDP('0.0.0.0', 1053)],
+  networks: [new DNSOverTCP({ address: '0.0.0.0', port: 1053 }), new DNSOverUDP({ address: '0.0.0.0', port: 1053 })],
 });
 
 server.use((req, res, next) => {

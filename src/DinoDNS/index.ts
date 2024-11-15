@@ -8,38 +8,33 @@ import { registerCache } from '../common/core/utils';
 export type DinoDNSProps = DefaultServerProps<dnsPacket.Packet> & {
   cache?: Cache;
   storage?: Store;
-  // stats?: boolean;
   logger?: Logger;
 };
 
 export class DinoDNS extends DefaultServer {
   public cache?: Cache;
   public storage?: Store;
-  // public stats?: boolean;
   public logger?: Logger;
 
   constructor(props: DinoDNSProps) {
     super(props);
 
-    if (props.logger) {
-      this.logger = props.logger;
-      this.use(props.logger.handler);
+    const { logger, cache, storage } = props;
+
+    if (logger) {
+      this.logger = logger;
+      this.use(logger.handler);
     }
 
-    if (props.cache) {
-      this.cache = props.cache;
-      this.use(props.cache.handler);
-      this.use(registerCache(props.cache));
+    if (cache) {
+      this.cache = cache;
+      this.use(cache.handler);
+      this.use(registerCache(cache));
     }
 
-    if (props.storage) {
-      // Add storage
-      this.storage = props.storage;
-      this.use(props.storage.handler);
+    if (storage) {
+      this.storage = storage;
+      this.use(storage.handler);
     }
-
-    // if(props.stats){
-    //     // Add stats
-    // }
   }
 }
