@@ -24,6 +24,9 @@ export interface DNSOverTCPProps {
   port: number;
   ssl?: SSLConfig;
   serializer?: TCPSerializer;
+  maxConnections?: number;
+  keepAlive?: boolean;
+  timeout?: number;
 }
 
 /**
@@ -37,18 +40,35 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
   public serializer: TCPSerializer;
   public networkType: SupportedNetworkType.TCP | SupportedNetworkType.TLS;
   public handler?: NetworkHandler;
+  public maxConnections: number;
+  public keepAlive: boolean;
+  public timeout: number;
 
-  constructor({ address, port, ssl, serializer }: DNSOverTCPProps) {
+  constructor({
+    address,
+    port,
+    ssl,
+    serializer,
+    maxConnections = Infinity,
+    keepAlive = true,
+    timeout = 1000,
+  }: DNSOverTCPProps) {
     this.address = address;
     this.port = port;
+    this.maxConnections = maxConnections;
+    this.keepAlive = keepAlive;
+    this.timeout = timeout;
 
     this.server = ssl ? tls.createServer({ key: ssl.key, cert: ssl.cert }) : net.createServer();
     this.serializer = serializer || new TCPSerializer();
     this.networkType = ssl ? SupportedNetworkType.TLS : SupportedNetworkType.TCP;
-
+    this.server.maxConnections = this.maxConnections;
     this.server.on(ssl ? 'secureConnection' : 'connection', (socket: net.Socket) => {
       const startTime = process.hrtime.bigint();
       const startTimeMs = Date.now();
+      socket.setNoDelay(true);
+      socket.setKeepAlive(this.keepAlive);
+      socket.setTimeout(this.timeout);
       let socketEnded = false;
 
       const endSocket = (err?: Error) => {
@@ -79,7 +99,11 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
           const response = await this.handler(request);
           if (!socketEnded) {
             socket.write(new Uint8Array(this.serializer.encode(response.packet.raw)), (err) => {
-              endSocket(err);
+              if (err) {
+                endSocket(err);
+              }
+              response.metadata.ts.responseTimeNs = process.hrtime.bigint();
+              response.metadata.ts.responseTimeMs = Date.now();
               response.emit('done', response);
               response.removeAllListeners(); // cleanup
             });
@@ -92,16 +116,11 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
       socket.on('error', (err) => {
         endSocket(err);
       });
-
-      socket.on('end', () => {
-        endSocket();
-      });
     });
   }
 
   async listen(callback?: () => void): Promise<void> {
-    this.server.listen(this.port, this.address, 1000, callback);
-
+    this.server.listen(this.port, this.address, callback);
     return;
   }
 
