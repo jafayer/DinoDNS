@@ -3,6 +3,8 @@ import { Network } from '../network';
 import { Handler } from '../../types/server';
 import { DefaultRouter, Router } from '../router';
 import dnsPacket from 'dns-packet';
+import cluster from 'cluster';
+import os from 'os';
 
 export interface DNSServer<PacketType> {
   networks: Network<PacketType>[];
@@ -25,6 +27,12 @@ export type DefaultServerProps<PacketType> = {
 
   /** The default handler used if no handler answers the query. Default behavior is NXDOMAIN response. */
   defaultHandler?: Handler;
+
+  /** Whether the server should run multithreaded in cluster mode.
+   *
+   * For more information, see the nodejs docs on [cluster mode](https://nodejs.org/api/cluster.html)
+   */
+  multithreaded?: boolean;
 };
 
 /**
@@ -39,13 +47,20 @@ export type DefaultServerProps<PacketType> = {
 export class DefaultServer implements DNSServer<dnsPacket.Packet> {
   public networks: Network<dnsPacket.Packet>[] = [];
   private router: Router;
+  public multithreaded: boolean;
 
-  constructor(props: DefaultServerProps<dnsPacket.Packet>) {
-    this.networks = props.networks;
-    this.router = props.router || new DefaultRouter();
+  constructor({
+    networks,
+    router = new DefaultRouter(),
+    multithreaded = false,
+    defaultHandler,
+  }: DefaultServerProps<dnsPacket.Packet>) {
+    this.networks = networks;
+    this.router = router;
+    this.multithreaded = multithreaded;
 
-    if (props.defaultHandler) {
-      this.default = props.defaultHandler;
+    if (defaultHandler) {
+      this.default = defaultHandler;
     }
 
     for (const network of this.networks) {
@@ -117,12 +132,26 @@ export class DefaultServer implements DNSServer<dnsPacket.Packet> {
   }
 
   start(callback?: () => void): void {
-    for (const network of this.networks) {
-      network.listen();
-    }
+    if (this.multithreaded && cluster.isPrimary) {
+      const numCpus = os.cpus().length;
 
-    if (callback) {
-      callback();
+      for (let i = 0; i < numCpus; i++) {
+        cluster.fork();
+      }
+
+      cluster.on('exit', (worker, code, signal) => {
+        console.log(`worker ${worker.process.pid} died, exiting with code ${code} and signal ${signal}`);
+        console.log('respawning worker...');
+        cluster.fork(); // respawn worker
+      });
+    } else {
+      for (const network of this.networks) {
+        network.listen();
+      }
+
+      if (callback) {
+        callback();
+      }
     }
   }
 
