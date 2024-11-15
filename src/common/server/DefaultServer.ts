@@ -49,13 +49,18 @@ export class DefaultServer implements DNSServer<dnsPacket.Packet> {
   private router: Router;
   public multithreaded: boolean;
 
-  constructor(props: DefaultServerProps<dnsPacket.Packet>) {
-    this.networks = props.networks;
-    this.router = props.router || new DefaultRouter();
-    this.multithreaded = props.multithreaded || false;
+  constructor({
+    networks,
+    router = new DefaultRouter(),
+    multithreaded = false,
+    defaultHandler,
+  }: DefaultServerProps<dnsPacket.Packet>) {
+    this.networks = networks;
+    this.router = router;
+    this.multithreaded = multithreaded;
 
-    if (props.defaultHandler) {
-      this.default = props.defaultHandler;
+    if (defaultHandler) {
+      this.default = defaultHandler;
     }
 
     for (const network of this.networks) {
