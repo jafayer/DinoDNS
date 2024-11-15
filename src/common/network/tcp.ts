@@ -44,8 +44,6 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
   public keepAlive: boolean;
   public timeout: number;
 
-  activeConnections: number = 0;
-
   constructor({
     address,
     port,
