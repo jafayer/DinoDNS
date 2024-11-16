@@ -119,11 +119,6 @@ export class DefaultServer implements DNSServer<dnsPacket.Packet> {
         });
       }
     });
-
-    // unsure if this is really a consideration, but
-    // make sure all subscribers to res are removed
-    // so it can be garbage collected properly
-    res.removeAllListeners();
   }
 
   default(req: DNSRequest, res: DNSResponse, next: NextFunction): void {
