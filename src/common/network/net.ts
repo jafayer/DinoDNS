@@ -16,6 +16,12 @@ export interface Network<T> {
   /** The type of network being used */
   networkType: SupportedNetworkType;
 
+  /** The address the network should bind to */
+  address: string;
+
+  /** The port the network should listen on */
+  port: number;
+
   /**
    * The serializer is responsible for encoding and decoding packets.
    * This is the piece of logic responsible for communicating directly with the wire format
