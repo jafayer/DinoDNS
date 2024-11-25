@@ -3,7 +3,9 @@ import { DefaultStore } from '../../plugins/storage';
 import { DNSOverTCP, DNSOverUDP, DefaultServer, DNSOverHTTP } from '../../common';
 import fs from 'fs';
 
-const logger = new ConsoleLogger(true, true);
+const logger = new ConsoleLogger({
+  logRequests: false,
+});
 
 const st = new DefaultStore();
 st.set('*', 'TXT', 'Hello, world!');
@@ -21,7 +23,7 @@ const s = new DefaultServer({
   ],
 });
 
-s.use(logger.handler.bind(logger));
+s.use(logger.handler);
 s.use(st.handler);
 
 s.start(() => {
