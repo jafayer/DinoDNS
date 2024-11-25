@@ -3,6 +3,15 @@ import { Connection } from '../common/network';
 import { CombineFlags, RCode } from '../common/core/utils';
 import { SupportedAnswer, SupportedQuestion } from '../types/dns';
 import { TypedEventEmitter } from '../common/core/events';
+import {
+  AUTHENTIC_DATA,
+  AUTHORITATIVE_ANSWER,
+  CHECKING_DISABLED,
+  RECURSION_AVAILABLE,
+  RECURSION_DESIRED,
+  TRUNCATED_RESPONSE,
+} from 'dns-packet';
+import { HasFlag } from '../common/core/utils';
 
 /**
  * The NextFunction type is a callback function that is used to pass control to the next middleware.
@@ -103,6 +112,23 @@ export class PacketWrapper {
 
   get flags(): number {
     return this.raw.flags || 0;
+  }
+
+  get flagsArray(): string[] {
+    const flags = this.flags;
+    return [
+      HasFlag(flags, 0x7fff) ? 'qr' : '',
+      HasFlag(flags, AUTHORITATIVE_ANSWER) ? 'aa' : '',
+      HasFlag(flags, TRUNCATED_RESPONSE) ? 'tc' : '',
+      HasFlag(flags, RECURSION_DESIRED) ? 'rd' : '',
+      HasFlag(flags, RECURSION_AVAILABLE) ? 'ra' : '',
+      HasFlag(flags, AUTHENTIC_DATA) ? 'ad' : '',
+      HasFlag(flags, CHECKING_DISABLED) ? 'cd' : '',
+    ].filter(Boolean); // Remove empty strings
+  }
+
+  get rcode(): string {
+    return RCode[this.flags & 0b00001111];
   }
 
   set flags(flags: number) {
