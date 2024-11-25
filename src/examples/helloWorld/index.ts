@@ -25,5 +25,7 @@ s.use(logger.handler.bind(logger));
 s.use(st.handler);
 
 s.start(() => {
-  console.log('Server started, using protocols:' + s.networks.map((n) => n.networkType).join(', '));
+  s.networks.map((n) => {
+    console.log(`Listening over ${n.networkType} on ${n.address}:${n.port}`);
+  });
 });
