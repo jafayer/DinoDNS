@@ -3,6 +3,15 @@ import { Connection } from '../common/network';
 import { CombineFlags, RCode } from '../common/core/utils';
 import { SupportedAnswer, SupportedQuestion } from '../types/dns';
 import { TypedEventEmitter } from '../common/core/events';
+import {
+  AUTHENTIC_DATA,
+  AUTHORITATIVE_ANSWER,
+  CHECKING_DISABLED,
+  RECURSION_AVAILABLE,
+  RECURSION_DESIRED,
+  TRUNCATED_RESPONSE,
+} from 'dns-packet';
+import { HasFlag } from '../common/core/utils';
 
 /**
  * The NextFunction type is a callback function that is used to pass control to the next middleware.
@@ -105,11 +114,55 @@ export class PacketWrapper {
     return this.raw.flags || 0;
   }
 
+  get flagsArray(): string[] {
+    const flags = this.flags;
+    return [
+      HasFlag(flags, 0x7fff) ? 'qr' : '',
+      HasFlag(flags, AUTHORITATIVE_ANSWER) ? 'aa' : '',
+      HasFlag(flags, TRUNCATED_RESPONSE) ? 'tc' : '',
+      HasFlag(flags, RECURSION_DESIRED) ? 'rd' : '',
+      HasFlag(flags, RECURSION_AVAILABLE) ? 'ra' : '',
+      HasFlag(flags, AUTHENTIC_DATA) ? 'ad' : '',
+      HasFlag(flags, CHECKING_DISABLED) ? 'cd' : '',
+    ].filter(Boolean); // Remove empty strings
+  }
+
+  get rcode(): keyof typeof RCode {
+    return RCode[this.flags & 0x000f] as keyof typeof RCode;
+  }
+
+  set rcode(rcode: RCode) {
+    if (this.frozen) {
+      throw new ModifiedAfterSentError();
+    }
+
+    if (!Object.values(RCode).includes(rcode)) {
+      throw new Error('Invalid rcode');
+    }
+
+    // Clear the last 4 bits (rcode) and set the new rcode
+    this.raw.flags = CombineFlags([this.flags & 0xfff0, rcode]);
+  }
+
   set flags(flags: number) {
     if (this.frozen) {
       throw new ModifiedAfterSentError();
     }
     this.raw.flags = flags;
+  }
+
+  addFlag(flag: number) {
+    if (this.frozen) {
+      throw new ModifiedAfterSentError();
+    }
+    this.raw.flags = this.flags | flag;
+  }
+
+  removeFlag(flag: number) {
+    if (this.frozen) {
+      throw new ModifiedAfterSentError();
+    }
+    this.raw.flags = this.flags & ~flag;
   }
 
   get questions(): ReadonlyArray<SupportedQuestion> {
