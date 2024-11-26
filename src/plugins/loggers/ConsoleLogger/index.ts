@@ -90,7 +90,7 @@ export const DEFAULT_LOG_FORMAT = `{remote}:{port}-> - {operation} {id} "{type} 
 /**
  * Replacer is a class that replaces placeholders in a string with values from a DNSRequest or DNSResponse.
  * The replacerMap is a map of keys to functions that take a DNSRequest or DNSResponse and return a string.
- * 
+ *
  * The default log format replaces the following keys:
  *  - remote: The remote address of the connection
  *  - port: The remote port of the connection
@@ -103,11 +103,11 @@ export const DEFAULT_LOG_FORMAT = `{remote}:{port}-> - {operation} {id} "{type} 
  *  - rcode: The response code of the packet
  *  - rflags: The flags of the packet, comma-separated
  *  - duration: The duration of the request in seconds (only available for responses)
- * 
+ *
  * You may customize this format by providing a different format string to the constructor.
  * If you use keys not in the replacerMap, you will need to provide a custom replacer function for that key
  * or it will not be replaced.
- * 
+ *
  * You may also provide any custom class that satisifes the replacer interface's replace method.
  */
 export class DefaultReplacer implements LogReplacer {
