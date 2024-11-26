@@ -112,10 +112,10 @@ export const DEFAULT_LOG_FORMAT = `{remote}:{port}-> - {operation} {id} "{type} 
  */
 export class DefaultReplacer implements LogReplacer {
   public format: string;
-  public replacerMap: { [key: string]: Function } = {
+  public replacerMap: { [key: string]: (req: DNSRequest | DNSResponse) => string | undefined } = {
     remote: (req: DNSRequest | DNSResponse) => req.connection.remoteAddress,
-    port: (req: DNSRequest | DNSResponse) => req.connection.remotePort,
-    id: (req: DNSRequest | DNSResponse) => req.packet.id,
+    port: (req: DNSRequest | DNSResponse) => req.connection.remotePort.toString(),
+    id: (req: DNSRequest | DNSResponse) => req.packet.id.toString(),
     type: (req: DNSRequest | DNSResponse) => req.packet.questions![0].type,
     class: (req: DNSRequest | DNSResponse) => req.packet.questions![0].class,
     name: (req: DNSRequest | DNSResponse) => req.packet.questions![0].name,
@@ -124,9 +124,9 @@ export class DefaultReplacer implements LogReplacer {
     rflags: (req: DNSRequest | DNSResponse) => req.packet.flagsArray.join(','),
     duration: (req: DNSRequest | DNSResponse) =>
       req.metadata.ts.requestTimeNs && req.metadata.ts.responseTimeNs
-        ? (Number(req.metadata.ts.responseTimeNs) - Number(req.metadata.ts.requestTimeNs)) / 1e9 // convert to seconds
+        ? ((Number(req.metadata.ts.responseTimeNs) - Number(req.metadata.ts.requestTimeNs)) / 1e9).toString() // convert to seconds
         : '--',
-    operation: (req: DNSRequest | DNSResponse) => req.packet.type,
+    operation: (req: DNSRequest | DNSResponse) => req.packet.type?.toString(),
   };
   constructor({ format = DEFAULT_LOG_FORMAT }: { format: string }) {
     this.format = format;
@@ -147,7 +147,7 @@ export class DefaultReplacer implements LogReplacer {
         return '--';
       }
       return value;
-    } catch (e) {
+    } catch {
       return '--';
     }
   }
