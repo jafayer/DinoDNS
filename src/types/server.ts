@@ -127,8 +127,21 @@ export class PacketWrapper {
     ].filter(Boolean); // Remove empty strings
   }
 
-  get rcode(): string {
-    return RCode[this.flags & 0b00001111];
+  get rcode(): keyof typeof RCode {
+    return RCode[this.flags & 0x000f] as keyof typeof RCode;
+  }
+
+  set rcode(rcode: RCode) {
+    if (this.frozen) {
+      throw new ModifiedAfterSentError();
+    }
+
+    if (!Object.values(RCode).includes(rcode)) {
+      throw new Error('Invalid rcode');
+    }
+
+    // Clear the last 4 bits (rcode) and set the new rcode
+    this.raw.flags = CombineFlags([this.flags & 0xfff0, rcode]);
   }
 
   set flags(flags: number) {
@@ -136,6 +149,20 @@ export class PacketWrapper {
       throw new ModifiedAfterSentError();
     }
     this.raw.flags = flags;
+  }
+
+  addFlag(flag: number) {
+    if (this.frozen) {
+      throw new ModifiedAfterSentError();
+    }
+    this.raw.flags = this.flags | flag;
+  }
+
+  removeFlag(flag: number) {
+    if (this.frozen) {
+      throw new ModifiedAfterSentError();
+    }
+    this.raw.flags = this.flags & ~flag;
   }
 
   get questions(): ReadonlyArray<SupportedQuestion> {
