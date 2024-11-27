@@ -366,9 +366,9 @@ export class DNSResponse extends TypedEventEmitter<DNSResponseEvents> {
    * @see [Docs](https://dinodns.dev/core-library/requests_and_responses/#error-responses)
    */
   errors = {
-    nxDomain: () => {
+    formatError: () => {
       const flags = this.packet.flags || 0;
-      this.packet.flags = CombineFlags([flags, RCode.NX_DOMAIN]);
+      this.packet.flags = CombineFlags([flags, RCode.FORMAT_ERROR]);
       this.done();
     },
     serverFailure: () => {
@@ -376,14 +376,39 @@ export class DNSResponse extends TypedEventEmitter<DNSResponseEvents> {
       this.packet.flags = CombineFlags([flags, RCode.SERVER_FAILURE]);
       this.done();
     },
-    refused: () => {
+    nxDomain: () => {
       const flags = this.packet.flags || 0;
-      this.packet.flags = CombineFlags([flags, RCode.FORMAT_ERROR]);
+      this.packet.flags = CombineFlags([flags, RCode.NX_DOMAIN]);
       this.done();
     },
     notImplemented: () => {
       const flags = this.packet.flags || 0;
       this.packet.flags = CombineFlags([flags, RCode.NOT_IMPLEMENTED]);
+      this.done();
+    },
+    refused: () => {
+      const flags = this.packet.flags || 0;
+      this.packet.flags = CombineFlags([flags, RCode.REFUSED]);
+      this.done();
+    },
+    yxDomain: () => {
+      const flags = this.packet.flags || 0;
+      this.packet.flags = CombineFlags([flags, RCode.YX_DOMAIN]);
+      this.done();
+    },
+    yxRRSet: () => {
+      const flags = this.packet.flags || 0;
+      this.packet.flags = CombineFlags([flags, RCode.YX_RR_SET]);
+      this.done();
+    },
+    notAuth: () => {
+      const flags = this.packet.flags || 0;
+      this.packet.flags = CombineFlags([flags, RCode.NOT_AUTH]);
+      this.done();
+    },
+    notZone: () => {
+      const flags = this.packet.flags || 0;
+      this.packet.flags = CombineFlags([flags, RCode.NOT_ZONE]);
       this.done();
     },
   };
