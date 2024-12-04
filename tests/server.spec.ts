@@ -1,9 +1,8 @@
 import { DefaultServer } from '../src/common/server';
 import { DNSOverTCP, DNSOverUDP, SupportedNetworkType } from '../src/common/network';
 import { DefaultStore } from '../src/plugins/storage';
-import { PacketWrapper, DNSRequest } from '../src/types';
+import { DNSRequest } from '../src/types';
 import { DuplicateAnswerForRequest } from '../src/types';
-import dns from 'node:dns';
 
 describe('server', () => {
   it('Should log an error when it tries to respond twice to the same request', async () => {
