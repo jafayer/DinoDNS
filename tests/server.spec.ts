@@ -7,7 +7,6 @@ import dns from 'node:dns';
 
 describe('server', () => {
   it('Should log an error when it tries to respond twice to the same request', async () => {
-
     jest.spyOn(console, 'error').mockImplementation(() => {});
 
     const tcp = new DNSOverTCP({ address: 'localhost', port: 8053 });

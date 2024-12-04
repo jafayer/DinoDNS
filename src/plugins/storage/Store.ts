@@ -16,10 +16,7 @@ export abstract class Store extends EventEmitter {
    * @param zone The name of the zone to retrieve
    * @param rType The record type to retrieve. If not provided, all records in the zone should be retrieved.
    */
-  abstract get<T extends SupportedRecordType>(
-    zone: string,
-    rType?: T,
-  ): Awaitable<DataMap | null>;
+  abstract get<T extends SupportedRecordType>(zone: string, rType?: T): Awaitable<DataMap | null>;
 
   /**
    * Set or update information about a zone in the database.

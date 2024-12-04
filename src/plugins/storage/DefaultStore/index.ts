@@ -43,11 +43,7 @@ export class DefaultStore extends EventEmitter implements Store {
    * @param wildcards Whether to resolve wildcard records
    * @returns The data for the given domain and record type, or null if no data is found
    */
-  get<T extends SupportedRecordType>(
-    domain: string,
-    rType?: T,
-    wildcards: boolean = true,
-  ): DataMap | null {
+  get<T extends SupportedRecordType>(domain: string, rType?: T, wildcards: boolean = true): DataMap | null {
     if (rType) {
       const record = this.data.get(domain);
       if (record && record.size > 0) {
@@ -57,7 +53,7 @@ export class DefaultStore extends EventEmitter implements Store {
             [rType]: records,
           } as DataMap;
         }
-        
+
         return null;
       }
     } else {
@@ -169,13 +165,18 @@ export class DefaultStore extends EventEmitter implements Store {
 
     if (records) {
       res.answer(
-        Object.entries(records).map(([rType, data]) => {
-          return data.map((d) => ({
-            name,
-            type: rType,
-            data: d,
-          } as SupportedAnswer))
-        }).flat(),
+        Object.entries(records)
+          .map(([rType, data]) => {
+            return data.map(
+              (d) =>
+                ({
+                  name,
+                  type: rType,
+                  data: d,
+                }) as SupportedAnswer,
+            );
+          })
+          .flat(),
       );
 
       if (this.shouldCache) {

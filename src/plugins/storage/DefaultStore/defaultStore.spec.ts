@@ -43,7 +43,7 @@ describe('MapStore', () => {
       expect(store.get('test.example.com', 'A')).toEqual(ARecordAnswer);
       expect(store.get('test.example.com', 'AAAA')).toEqual(AAAARecordAnswer);
 
-      expect(store.get('test.example.com')).toEqual({...ARecordAnswer, ...AAAARecordAnswer});
+      expect(store.get('test.example.com')).toEqual({ ...ARecordAnswer, ...AAAARecordAnswer });
     });
 
     it('should be able to get a wildcard record with specific rType when the data does not exist', async () => {
@@ -85,7 +85,7 @@ describe('MapStore', () => {
     it('should be able to append to an empty record', async () => {
       store.append('example.com', 'A', ARecords[0]);
 
-      expect(store.get('example.com', 'A')).toEqual({A: [ARecords[0]]});
+      expect(store.get('example.com', 'A')).toEqual({ A: [ARecords[0]] });
     });
   });
 
@@ -101,7 +101,7 @@ describe('MapStore', () => {
       store.set('example.com', 'A', ARecords);
       store.delete('example.com', 'A', ARecords[0]);
 
-      expect(store.get('example.com', 'A')).toEqual({A: [ARecords[1]]});
+      expect(store.get('example.com', 'A')).toEqual({ A: [ARecords[1]] });
     });
 
     it('should be able to delete a whole record', async () => {
@@ -117,7 +117,7 @@ describe('MapStore', () => {
       store.set('example.com', 'AAAA', AAAARecords);
       store.delete('example.com', 'A', ARecords[0]);
 
-      expect(store.get('example.com', 'A')).toEqual({A: [ARecords[1]]});
+      expect(store.get('example.com', 'A')).toEqual({ A: [ARecords[1]] });
       expect(store.get('example.com', 'AAAA')).toEqual(AAAARecordAnswer);
     });
 
@@ -146,7 +146,7 @@ describe('MapStore', () => {
     it('should clean up the key if no records are left', async () => {
       store.set('example.com', 'A', ARecords);
       store.delete('example.com', 'A', ARecords[0]);
-      expect(store.get('example.com', 'A')).toEqual({A: [ARecords[1]]});
+      expect(store.get('example.com', 'A')).toEqual({ A: [ARecords[1]] });
       store.delete('example.com', 'A', ARecords[1]);
 
       expect(store.get('example.com')).toEqual(null);

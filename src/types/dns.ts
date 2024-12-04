@@ -56,7 +56,7 @@ export type ZoneData = {
  */
 export type DataMap = {
   [T in keyof ZoneData]: ZoneData[T][];
-}
+};
 
 export type SupportedAnswer = Exclude<Answer, OptAnswer>;
 export type SupportedRecordType = Exclude<RecordType, 'OPT'>;
