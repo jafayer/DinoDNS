@@ -1,4 +1,4 @@
-import { ZoneData, SupportedRecordType, SupportedAnswer } from '../../../types/dns';
+import { ZoneData, SupportedRecordType, SupportedAnswer, DataMap } from '../../../types/dns';
 import { Store } from '../Store';
 import { EventEmitter } from 'events';
 import { DNSRequest, DNSResponse, NextFunction } from '../../../types/server';
@@ -47,16 +47,23 @@ export class DefaultStore extends EventEmitter implements Store {
     domain: string,
     rType?: T,
     wildcards: boolean = true,
-  ): ZoneData[T][] | ZoneData[keyof ZoneData][] | null {
+  ): DataMap | null {
     if (rType) {
       const record = this.data.get(domain);
       if (record && record.size > 0) {
-        return record.get(rType) || null;
+        const records = record.get(rType);
+        if (records) {
+          return {
+            [rType]: records,
+          } as DataMap;
+        }
+        
+        return null;
       }
     } else {
       const record = this.data.get(domain);
       if (record && record.size > 0) {
-        return Array.from(record.values()).flat();
+        return Object.fromEntries(record) as DataMap;
       }
     }
 
@@ -74,12 +81,17 @@ export class DefaultStore extends EventEmitter implements Store {
       if (rType) {
         const record = this.data.get(wildcardDomain);
         if (record && record.size > 0) {
-          return record.get(rType) || null;
+          const records = record.get(rType);
+          if (records) {
+            return {
+              [rType]: records,
+            } as DataMap;
+          }
         }
       } else {
         const record = this.data.get(wildcardDomain);
         if (record && record.size > 0) {
-          return Array.from(record.values()).flat();
+          return Object.fromEntries(record) as DataMap;
         }
       }
     }
@@ -155,19 +167,19 @@ export class DefaultStore extends EventEmitter implements Store {
 
     const records = this.get(name, type);
 
-    const answers: SupportedAnswer[] | undefined = records?.map((record) => {
-      return {
-        name,
-        type,
-        data: record,
-      } as SupportedAnswer;
-    });
-
-    if (records && answers && answers.length > 0) {
-      res.answer(answers);
+    if (records) {
+      res.answer(
+        Object.entries(records).map(([rType, data]) => {
+          return data.map((d) => ({
+            name,
+            type: rType,
+            data: d,
+          } as SupportedAnswer))
+        }).flat(),
+      );
 
       if (this.shouldCache) {
-        this.emitCacheRequest(name, type, records);
+        this.emitCacheRequest(name, type, records[type]);
       }
     }
 

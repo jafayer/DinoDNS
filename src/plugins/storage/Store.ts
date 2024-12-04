@@ -1,5 +1,5 @@
 import { Handler } from '../../types/server';
-import { ZoneData, SupportedRecordType } from '../../types/dns';
+import { ZoneData, SupportedRecordType, DataMap } from '../../types/dns';
 import { EventEmitter } from 'events';
 import { Awaitable } from '../../common/core/utils';
 
@@ -19,7 +19,7 @@ export abstract class Store extends EventEmitter {
   abstract get<T extends SupportedRecordType>(
     zone: string,
     rType?: T,
-  ): Awaitable<ZoneData[T][] | ZoneData[keyof ZoneData][] | null>;
+  ): Awaitable<DataMap | null>;
 
   /**
    * Set or update information about a zone in the database.
