@@ -35,11 +35,6 @@ describe('PacketWrapper', () => {
 
     for (const rcode of rcodes) {
       const num = RCode[rcode];
-      console.log({
-        rcode,
-        num,
-        last4: packetWrapper.raw.flags! & 0x000f,
-      });
       packetWrapper.rcode = rcode;
       expect(packetWrapper.rcode).toBe(num);
     }
