@@ -2,7 +2,7 @@ import { PacketWrapper } from './server';
 import dnsPacket from 'dns-packet';
 import { RCode } from '../common/core/utils';
 import { HasFlag } from '../common/core/utils';
-import { RECURSION_AVAILABLE, RECURSION_DESIRED } from 'dns-packet';
+import { RECURSION_AVAILABLE, RECURSION_DESIRED, AUTHORITATIVE_ANSWER, TRUNCATED_RESPONSE, AUTHENTIC_DATA, CHECKING_DISABLED } from 'dns-packet';
 
 describe('PacketWrapper', () => {
   const defaultPacket: dnsPacket.Packet = {
@@ -17,6 +17,10 @@ describe('PacketWrapper', () => {
 
   beforeEach(() => {
     packetWrapper = new PacketWrapper(defaultPacket);
+  });
+
+  it('should be able to get the packet id', () => {
+    expect(packetWrapper.id).toBe(1);
   });
 
   it('should be able to get and set the packet rcode', () => {
@@ -34,14 +38,8 @@ describe('PacketWrapper', () => {
     ];
 
     for (const rcode of rcodes) {
-      const num = RCode[rcode];
-      console.log({
-        rcode,
-        num,
-        last4: packetWrapper.raw.flags! & 0x000f,
-      });
       packetWrapper.rcode = rcode;
-      expect(packetWrapper.rcode).toBe(num);
+      expect(packetWrapper.rcode).toBe(rcode);
     }
   });
 
@@ -94,5 +92,59 @@ describe('PacketWrapper', () => {
     expect(packetWrapper.flagsArray).toEqual(['ra']);
     packetWrapper.addFlag(RECURSION_DESIRED);
     expect(packetWrapper.flagsArray).toEqual(['rd', 'ra']);
+  });
+
+  describe('flagsArray', () => {
+    it('should return an empty array when no flags are set', () => {
+      const packet = { flags: 0 } as dnsPacket.Packet;
+      const wrapper = new PacketWrapper(packet);
+      expect(wrapper.flagsArray).toEqual([]);
+    });
+
+    it('should return the correct flags when they are set', () => {
+      const packet = { flags: AUTHORITATIVE_ANSWER } as dnsPacket.Packet;
+      const wrapper = new PacketWrapper(packet);
+      expect(wrapper.flagsArray).toEqual(['aa']);
+    });
+
+    it('should return the correct flags when multiple flags are set', () => {
+      const packet = { flags: AUTHORITATIVE_ANSWER | TRUNCATED_RESPONSE | RECURSION_DESIRED } as dnsPacket.Packet;
+      const wrapper = new PacketWrapper(packet);
+      expect(wrapper.flagsArray).toEqual(['aa', 'tc', 'rd']);
+    });
+
+    it('should return the correct flags when all flags are set', () => {
+      const packet = { flags: AUTHORITATIVE_ANSWER | TRUNCATED_RESPONSE | RECURSION_DESIRED | RECURSION_AVAILABLE | AUTHENTIC_DATA | CHECKING_DISABLED } as dnsPacket.Packet;
+      const wrapper = new PacketWrapper(packet);
+      expect(wrapper.flagsArray).toEqual(['aa', 'tc', 'rd', 'ra', 'ad', 'cd']);
+    });
+
+    it('should return the correct flags when the flags are set by method', () => {
+      packetWrapper.flags = 0;
+      packetWrapper.addFlag(AUTHORITATIVE_ANSWER);
+      expect(packetWrapper.flagsArray).toEqual(['aa']);
+
+      packetWrapper.addFlag(TRUNCATED_RESPONSE);
+      expect(packetWrapper.flagsArray).toEqual(['aa', 'tc']);
+    })
+
+    it('should filter out empty strings from the flags array', () => {
+      const packet = { flags: AUTHORITATIVE_ANSWER | 0x0000 } as dnsPacket.Packet;
+      const wrapper = new PacketWrapper(packet);
+      expect(wrapper.flagsArray).toEqual(['aa']);
+    });
+  });
+
+  describe('rcode', () => {
+    it('should return the correct rcode', () => {
+      const packet = { flags: RCode.REFUSED } as dnsPacket.Packet;
+      const wrapper = new PacketWrapper(packet);
+      expect(wrapper.rcode).toBe(RCode.REFUSED);
+    });
+
+    it('should return the correct rcode when it is set by method', () => {
+      packetWrapper.rcode = RCode.REFUSED;
+      expect(packetWrapper.rcode).toBe(RCode.REFUSED);
+    });
   });
 });

@@ -1,22 +1,22 @@
-import { DefaultStore } from '.';
-import { ZoneData } from '../../../types/dns';
-import { DefaultStoreTestSuite } from '../../../../tests/store';
+import { Store } from '../src/plugins/storage';
+import { ZoneData } from '../src/types';
 
-describe('MapStore', () => {
-  let store: DefaultStore;
+export const DefaultStoreTestSuite = <T extends Store>(StoreClass: new () => T) => {
+  let store: T;
   const ARecords: ZoneData['A'][] = ['127.0.0.1', '127.0.0.2'];
   const AAAARecords: ZoneData['AAAA'][] = ['::1', '::2'];
 
   beforeEach(() => {
-    store = new DefaultStore();
+    store = new StoreClass();
   });
 
   describe('create', () => {
     it('should be able to create a new store', () => {
-      const newStore = new DefaultStore();
-      expect(newStore).toBeInstanceOf(DefaultStore);
+      const newStore = new StoreClass();
+      expect(newStore).toBeInstanceOf(StoreClass);
     });
   });
+
 
   describe('get', () => {
     it('should be able to get data from an exact match', async () => {
@@ -27,12 +27,6 @@ describe('MapStore', () => {
       expect(store.get('example.com', 'AAAA')).toEqual(AAAARecords);
 
       expect(store.get('example.com')).toEqual([...ARecords, ...AAAARecords]);
-    });
-
-    it('should not return data if wildcards are disabled', async () => {
-      store.set('*.example.com', 'A', ARecords);
-
-      expect(store.get('example.com', 'A', false)).toEqual(null);
     });
 
     it('should be able to get data from a wildcard match', async () => {
@@ -50,7 +44,18 @@ describe('MapStore', () => {
 
       expect(store.get('example.com', 'AAAA')).toEqual(null);
     });
+
+    it('should be able to get data from a top-level wildcard', async () => {
+      store.set('*', 'A', ARecords);
+      store.set('*', 'AAAA', AAAARecords);
+
+      expect(store.get('example.com', 'A')).toEqual(ARecords);
+      expect(store.get('example.com', 'AAAA')).toEqual(AAAARecords);
+
+      expect(store.get('example.com')).toEqual([...ARecords, ...AAAARecords]);
+    })
   });
+
 
   describe('set', () => {
     it('should be able to set a single record', async () => {
@@ -151,76 +156,4 @@ describe('MapStore', () => {
       expect(store.get('example.com')).toEqual(null);
     });
   });
-
-  describe('Cache request', () => {
-    it('should be able to emit a cache request', (done) => {
-      store.on('cacheRequest', () => {
-        done();
-      });
-
-      store.emitCacheRequest('example.com', 'A', ARecords);
-    });
-  });
-
-  describe('toString', () => {
-    it('should be able to stringify the store', async () => {
-      store.set('example.com', 'A', ARecords);
-      store.set('example.com', 'AAAA', AAAARecords);
-
-      expect(store.toString()).toEqual(
-        JSON.stringify({
-          'example.com': {
-            A: ARecords,
-            AAAA: AAAARecords,
-          },
-        }),
-      );
-    });
-
-    it('should be able to stringify an empty store', () => {
-      expect(store.toString()).toEqual(JSON.stringify({}));
-    });
-
-    it('should handle null values', async () => {
-      store.set('example.com', 'A', ARecords);
-      store.set('example.com', 'AAAA', AAAARecords);
-
-      store.delete('example.com', 'A');
-
-      expect(store.toString()).toEqual(
-        JSON.stringify({
-          'example.com': {
-            AAAA: AAAARecords,
-          },
-        }),
-      );
-    });
-  });
-
-  describe('fromString', () => {
-    it('should be able to create a store from a string', () => {
-      const str = JSON.stringify({
-        'example.com': {
-          A: ARecords,
-          AAAA: AAAARecords,
-        },
-      });
-
-      const newStore = DefaultStore.fromString(str);
-      expect(newStore).toBeInstanceOf(DefaultStore);
-      expect(newStore.toString()).toEqual(str);
-    });
-
-    it('should be able to create an empty store from a string', () => {
-      const str = JSON.stringify({});
-
-      const newStore = DefaultStore.fromString(str);
-      expect(newStore).toBeInstanceOf(DefaultStore);
-      expect(newStore.toString()).toEqual(str);
-    });
-  });
-});
-
-describe('Standard Test Suite', () => {
-  DefaultStoreTestSuite(DefaultStore);
-})
+};
