@@ -1,12 +1,12 @@
 import { DefaultStore } from '.';
-import { ZoneData, DataMap } from '../../../types/dns';
+import { ZoneData, ZoneDataMap } from '../../../types/dns';
 
 describe('MapStore', () => {
   let store: DefaultStore;
   const ARecords: ZoneData['A'][] = ['127.0.0.1', '127.0.0.2'];
-  const ARecordAnswer: Partial<DataMap> = { A: ARecords };
+  const ARecordAnswer: Partial<ZoneDataMap> = { A: ARecords };
   const AAAARecords: ZoneData['AAAA'][] = ['::1', '::2'];
-  const AAAARecordAnswer: Partial<DataMap> = { AAAA: AAAARecords };
+  const AAAARecordAnswer: Partial<ZoneDataMap> = { AAAA: AAAARecords };
 
   beforeEach(() => {
     store = new DefaultStore();

@@ -54,7 +54,7 @@ export type ZoneData = {
  * Each key is a record type, and each value is an array of data associated with
  * that value.
  */
-export type DataMap = {
+export type ZoneDataMap = {
   [T in keyof ZoneData]: ZoneData[T][];
 };
 

@@ -1,4 +1,4 @@
-import { ZoneData, SupportedRecordType, SupportedAnswer, DataMap } from '../../../types/dns';
+import { ZoneData, SupportedRecordType, SupportedAnswer, ZoneDataMap } from '../../../types/dns';
 import { Store } from '../Store';
 import { EventEmitter } from 'events';
 import { DNSRequest, DNSResponse, NextFunction } from '../../../types/server';
@@ -43,7 +43,7 @@ export class DefaultStore extends EventEmitter implements Store {
    * @param wildcards Whether to resolve wildcard records
    * @returns The data for the given domain and record type, or null if no data is found
    */
-  get<T extends SupportedRecordType>(domain: string, rType?: T, wildcards: boolean = true): DataMap | null {
+  get<T extends SupportedRecordType>(domain: string, rType?: T, wildcards: boolean = true): ZoneDataMap | null {
     if (rType) {
       const record = this.data.get(domain);
       if (record && record.size > 0) {
@@ -51,7 +51,7 @@ export class DefaultStore extends EventEmitter implements Store {
         if (records) {
           return {
             [rType]: records,
-          } as DataMap;
+          } as ZoneDataMap;
         }
 
         return null;
@@ -59,7 +59,7 @@ export class DefaultStore extends EventEmitter implements Store {
     } else {
       const record = this.data.get(domain);
       if (record && record.size > 0) {
-        return Object.fromEntries(record) as DataMap;
+        return Object.fromEntries(record) as ZoneDataMap;
       }
     }
 
@@ -81,13 +81,13 @@ export class DefaultStore extends EventEmitter implements Store {
           if (records) {
             return {
               [rType]: records,
-            } as DataMap;
+            } as ZoneDataMap;
           }
         }
       } else {
         const record = this.data.get(wildcardDomain);
         if (record && record.size > 0) {
-          return Object.fromEntries(record) as DataMap;
+          return Object.fromEntries(record) as ZoneDataMap;
         }
       }
     }
