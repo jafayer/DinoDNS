@@ -1,5 +1,5 @@
 import { Handler } from '../../types/server';
-import { ZoneData, SupportedRecordType } from '../../types/dns';
+import { ZoneData, SupportedRecordType, ZoneDataMap } from '../../types/dns';
 import { EventEmitter } from 'events';
 import { Awaitable } from '../../common/core/utils';
 
@@ -16,10 +16,7 @@ export abstract class Store extends EventEmitter {
    * @param zone The name of the zone to retrieve
    * @param rType The record type to retrieve. If not provided, all records in the zone should be retrieved.
    */
-  abstract get<T extends SupportedRecordType>(
-    zone: string,
-    rType?: T,
-  ): Awaitable<ZoneData[T][] | ZoneData[keyof ZoneData][] | null>;
+  abstract get<T extends SupportedRecordType>(zone: string, rType?: T): Awaitable<Partial<ZoneDataMap> | null>;
 
   /**
    * Set or update information about a zone in the database.

@@ -1,10 +1,12 @@
 import { DefaultStore } from '.';
-import { ZoneData } from '../../../types/dns';
+import { ZoneData, ZoneDataMap } from '../../../types/dns';
 
 describe('MapStore', () => {
   let store: DefaultStore;
   const ARecords: ZoneData['A'][] = ['127.0.0.1', '127.0.0.2'];
+  const ARecordAnswer: Partial<ZoneDataMap> = { A: ARecords };
   const AAAARecords: ZoneData['AAAA'][] = ['::1', '::2'];
+  const AAAARecordAnswer: Partial<ZoneDataMap> = { AAAA: AAAARecords };
 
   beforeEach(() => {
     store = new DefaultStore();
@@ -22,10 +24,10 @@ describe('MapStore', () => {
       store.set('example.com', 'A', ARecords);
       store.set('example.com', 'AAAA', AAAARecords);
 
-      expect(store.get('example.com', 'A')).toEqual(ARecords);
-      expect(store.get('example.com', 'AAAA')).toEqual(AAAARecords);
+      expect(store.get('example.com', 'A')).toEqual(ARecordAnswer);
+      expect(store.get('example.com', 'AAAA')).toEqual(AAAARecordAnswer);
 
-      expect(store.get('example.com')).toEqual([...ARecords, ...AAAARecords]);
+      expect(store.get('example.com')).toEqual({ ...ARecordAnswer, ...AAAARecordAnswer });
     });
 
     it('should not return data if wildcards are disabled', async () => {
@@ -38,10 +40,10 @@ describe('MapStore', () => {
       store.set('*.example.com', 'A', ARecords);
       store.set('*.example.com', 'AAAA', AAAARecords);
 
-      expect(store.get('test.example.com', 'A')).toEqual(ARecords);
-      expect(store.get('test.example.com', 'AAAA')).toEqual(AAAARecords);
+      expect(store.get('test.example.com', 'A')).toEqual(ARecordAnswer);
+      expect(store.get('test.example.com', 'AAAA')).toEqual(AAAARecordAnswer);
 
-      expect(store.get('test.example.com')).toEqual([...ARecords, ...AAAARecords]);
+      expect(store.get('test.example.com')).toEqual({ ...ARecordAnswer, ...AAAARecordAnswer });
     });
 
     it('should be able to get a wildcard record with specific rType when the data does not exist', async () => {
@@ -55,13 +57,13 @@ describe('MapStore', () => {
     it('should be able to set a single record', async () => {
       store.set('example.com', 'A', ARecords[0]);
 
-      expect(store.get('example.com', 'A')).toEqual([ARecords[0]]);
+      expect(store.get('example.com', 'A')).toEqual({ A: [ARecords[0]] });
     });
 
     it('should be able to set an array of records', async () => {
       store.set('example.com', 'A', ARecords);
 
-      expect(store.get('example.com', 'A')).toEqual(ARecords);
+      expect(store.get('example.com', 'A')).toEqual(ARecordAnswer);
     });
   });
 
@@ -70,20 +72,20 @@ describe('MapStore', () => {
       store.set('example.com', 'A', ARecords[0]);
       store.append('example.com', 'A', ARecords[1]);
 
-      expect(store.get('example.com', 'A')).toEqual(ARecords);
+      expect(store.get('example.com', 'A')).toEqual(ARecordAnswer);
     });
 
     it('should be able to append an array of records', async () => {
       store.set('example.com', 'A', ARecords[0]);
       store.append('example.com', 'A', ARecords[1]);
 
-      expect(store.get('example.com', 'A')).toEqual(ARecords);
+      expect(store.get('example.com', 'A')).toEqual(ARecordAnswer);
     });
 
     it('should be able to append to an empty record', async () => {
       store.append('example.com', 'A', ARecords[0]);
 
-      expect(store.get('example.com', 'A')).toEqual([ARecords[0]]);
+      expect(store.get('example.com', 'A')).toEqual({ A: [ARecords[0]] });
     });
   });
 
@@ -99,7 +101,7 @@ describe('MapStore', () => {
       store.set('example.com', 'A', ARecords);
       store.delete('example.com', 'A', ARecords[0]);
 
-      expect(store.get('example.com', 'A')).toEqual([ARecords[1]]);
+      expect(store.get('example.com', 'A')).toEqual({ A: [ARecords[1]] });
     });
 
     it('should be able to delete a whole record', async () => {
@@ -115,8 +117,8 @@ describe('MapStore', () => {
       store.set('example.com', 'AAAA', AAAARecords);
       store.delete('example.com', 'A', ARecords[0]);
 
-      expect(store.get('example.com', 'A')).toEqual([ARecords[1]]);
-      expect(store.get('example.com', 'AAAA')).toEqual(AAAARecords);
+      expect(store.get('example.com', 'A')).toEqual({ A: [ARecords[1]] });
+      expect(store.get('example.com', 'AAAA')).toEqual(AAAARecordAnswer);
     });
 
     it('should leave other record types untouched', async () => {
@@ -125,14 +127,14 @@ describe('MapStore', () => {
       store.delete('example.com', 'A');
 
       expect(store.get('example.com', 'A')).toEqual(null);
-      expect(store.get('example.com', 'AAAA')).toEqual(AAAARecords);
+      expect(store.get('example.com', 'AAAA')).toEqual(AAAARecordAnswer);
     });
 
     it('should be able to delete a specific record where its record type does not', async () => {
       store.set('example.com', 'A', ARecords);
       store.delete('example.com', 'AAAA', '::1');
 
-      expect(store.get('example.com', 'A')).toEqual(ARecords);
+      expect(store.get('example.com', 'A')).toEqual(ARecordAnswer);
       expect(store.get('example.com', 'AAAA')).toEqual(null);
     });
 
@@ -144,7 +146,7 @@ describe('MapStore', () => {
     it('should clean up the key if no records are left', async () => {
       store.set('example.com', 'A', ARecords);
       store.delete('example.com', 'A', ARecords[0]);
-      expect(store.get('example.com', 'A')).toEqual([ARecords[1]]);
+      expect(store.get('example.com', 'A')).toEqual({ A: [ARecords[1]] });
       store.delete('example.com', 'A', ARecords[1]);
 
       expect(store.get('example.com')).toEqual(null);

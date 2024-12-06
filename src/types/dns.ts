@@ -49,6 +49,15 @@ export type ZoneData = {
   TXT: TxtData;
 };
 
+/**
+ * Defines a map of all possible data that can be returned in a DNS response.
+ * Each key is a record type, and each value is an array of data associated with
+ * that value.
+ */
+export type ZoneDataMap = {
+  [T in keyof ZoneData]: ZoneData[T][];
+};
+
 export type SupportedAnswer = Exclude<Answer, OptAnswer>;
 export type SupportedRecordType = Exclude<RecordType, 'OPT'>;
 export type SupportedQuestion = Question & { type: SupportedRecordType };

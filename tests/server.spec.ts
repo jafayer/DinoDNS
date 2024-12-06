@@ -1,15 +1,17 @@
 import { DefaultServer } from '../src/common/server';
-import { DNSOverTCP, DNSOverUDP } from '../src/common/network';
+import { DNSOverTCP, DNSOverUDP, SupportedNetworkType } from '../src/common/network';
 import { DefaultStore } from '../src/plugins/storage';
-import dns from 'node:dns';
+import { DNSRequest } from '../src/types';
+import { DuplicateAnswerForRequest } from '../src/types';
 
 describe('server', () => {
-  it('Should throw an error when it tries to respond twice to the same request', async () => {
+  it('Should log an error when it tries to respond twice to the same request', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    const tcp = new DNSOverTCP({ address: 'localhost', port: 8053 });
+    const udp = new DNSOverUDP({ address: 'localhost', port: 8053 });
     const server = new DefaultServer({
-      networks: [
-        new DNSOverTCP({ address: 'localhost', port: 8053 }),
-        new DNSOverUDP({ address: 'localhost', port: 8053 }),
-      ],
+      networks: [tcp, udp],
       defaultHandler: (req, res) => {
         res.errors.nxDomain();
       },
@@ -60,17 +62,31 @@ describe('server', () => {
       });
     });
 
-    server.start(() => {
-      console.log('Server started');
-    });
+    // mock a DNS request
+    const request = new DNSRequest(
+      {
+        id: 0,
+        questions: [
+          {
+            name: 'example.com',
+            type: 'A',
+            class: 'IN',
+          },
+        ],
+        answers: [],
+        additionals: [],
+        authorities: [],
+      },
+      {
+        remoteAddress: '127.0.0.1',
+        remotePort: 0,
+        type: SupportedNetworkType.TCP,
+      },
+    );
+    const result = await tcp.handler!(request);
+    const records = result.packet.answers.map((answer) => answer.data);
 
-    // query localhost:8053 for example.com
-    const resolver = new dns.promises.Resolver();
-
-    resolver.setServers(['127.0.0.1:8053']);
-
-    const result = await resolver.resolve('example.com');
-
-    expect(result).toEqual(['127.0.0.1']);
+    expect(records).toEqual(['127.0.0.1']);
+    expect(console.error).toHaveBeenCalledWith(expect.any(DuplicateAnswerForRequest));
   });
 });
