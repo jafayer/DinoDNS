@@ -1,4 +1,5 @@
 import { DefaultStore } from '.';
+import { DefaultStoreTestSuite } from '../../../../tests/store';
 import { ZoneData, ZoneDataMap } from '../../../types/dns';
 
 describe('MapStore', () => {
@@ -221,3 +222,7 @@ describe('MapStore', () => {
     });
   });
 });
+
+describe('Standard Test Suite', () => {
+  DefaultStoreTestSuite(DefaultStore);
+})

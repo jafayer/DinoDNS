@@ -1,5 +1,6 @@
 import { Logger, LogLevel } from '../logger';
 import { DNSRequest, DNSResponse, NextFunction } from '../../../types/server';
+import { RCode } from '../../../common/core/utils';
 
 export type ConsoleLoggerProps = {
   logRequests?: boolean;
@@ -120,7 +121,7 @@ export class DefaultReplacer implements LogReplacer {
     class: (req: DNSRequest | DNSResponse) => req.packet.questions![0].class,
     name: (req: DNSRequest | DNSResponse) => req.packet.questions![0].name,
     proto: (req: DNSRequest | DNSResponse) => req.connection.type,
-    rcode: (req: DNSRequest | DNSResponse) => (req instanceof DNSRequest ? '--' : req.packet.rcode),
+    rcode: (req: DNSRequest | DNSResponse) => (req instanceof DNSRequest ? '--' : RCode[req.packet.rcode]),
     rflags: (req: DNSRequest | DNSResponse) => req.packet.flagsArray.join(','),
     duration: (req: DNSRequest | DNSResponse) =>
       req.metadata.ts.requestTimeNs && req.metadata.ts.responseTimeNs
