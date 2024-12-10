@@ -72,7 +72,16 @@ server.start(() => {
 });
 ```
 
-## Unsupported features
+## Features
+
+- [x] DNS over UDP, TCP, TLS, HTTP, HTTPS
+- [x] Built-in, basic plugins for zone data storage, caching, and logging
+- [x] Dynamic, user-defined, Express-like middleware and request handlers
+- [x] Seamless multithreading support ([see docs](https://dinodns.dev/core-library/default-server/#multithreaded-support))
+- [x] Load tested in synthetic benchmarks
+- [x] Limited external plugin selection (more planned), such as the [Redis store](https://www.npmjs.com/package/@dinodns/redis-store)
+
+## Currently unsupported features
 
 - EDNS
 - TCP packet fragmentation
