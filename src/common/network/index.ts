@@ -1,7 +1,7 @@
-export type { Network, NetworkHandler, Connection } from './net';
+export type { Network, NetworkHandler, Connection, SSLConfig } from './net';
 
 export { SupportedNetworkType } from './net';
 
-export { DNSOverUDP, UDPSerializer } from './udp';
-export { DNSOverTCP, TCPSerializer } from './tcp';
-export { DNSOverHTTP } from './http';
+export { DNSOverUDP, UDPSerializer, DNSOverUDPProps } from './udp';
+export { DNSOverTCP, TCPSerializer, DNSOverTCPProps } from './tcp';
+export { DNSOverHTTP, DNSOverHTTPProps } from './http';

@@ -5,7 +5,7 @@ import { DNSPacketSerializer } from '../serializer';
 import dnsPacket from 'dns-packet';
 import { DNSRequest } from '../../types';
 
-export interface DoHProps {
+export interface DNSOverHTTPProps {
   address: string;
   port: number;
   ssl?: SSLConfig;
@@ -25,7 +25,7 @@ export class DNSOverHTTP extends EventEmitter implements Network<dnsPacket.Packe
   public handler?: NetworkHandler;
   public maxConnections: number;
 
-  constructor({ address, port, ssl, maxConnections = Infinity }: DoHProps) {
+  constructor({ address, port, ssl, maxConnections = Infinity }: DNSOverHTTPProps) {
     super();
 
     this.address = address;
