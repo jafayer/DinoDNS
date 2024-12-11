@@ -127,8 +127,8 @@ export class PacketWrapper {
     ].filter(Boolean); // Remove empty strings
   }
 
-  get rcode(): keyof typeof RCode {
-    return RCode[this.flags & 0x000f] as keyof typeof RCode;
+  get rcode(): number {
+    return this.flags & 0x000f;
   }
 
   set rcode(rcode: RCode) {
