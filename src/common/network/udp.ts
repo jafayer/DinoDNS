@@ -4,6 +4,7 @@ import dgram from 'dgram';
 import dnsPacket, { TRUNCATED_RESPONSE } from 'dns-packet';
 import { RCode, CombineFlags } from '../core/utils';
 import { DNSRequest } from '../../types';
+import { isIPv6 } from 'net';
 
 /**
  * Serializer for the UDP protocol. The `dns-packet` module's
@@ -71,7 +72,7 @@ export class DNSOverUDP implements Network<dnsPacket.Packet> {
   constructor({ address, port, serializer }: DNSOverUDPProps) {
     this.address = address;
     this.port = port;
-    this.server = dgram.createSocket('udp4');
+    this.server = dgram.createSocket(isIPv6(this.address) ? 'udp6' : 'udp4');
     this.serializer = serializer || new UDPSerializer();
 
     this.server.on('message', async (msg, rinfo) => {
