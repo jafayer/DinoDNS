@@ -9,9 +9,9 @@ export const example = new DDNS(store, {
   queryCallback: async () => {
     return fetch('https://api.ipify.org?format=json')
       .then((res) => res.json())
-      .then((json: any) => {
+      .then((json) => {
         return {
-          A: [json.ip],
+          A: [(json as unknown as { ip: string }).ip],
         };
       });
   },

@@ -72,9 +72,9 @@ export class Forwarder {
       const response = await this.doRequest(req.packet.raw);
       res.answer(response.answers as SupportedAnswer[]);
       next();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Forwarder error:', err);
-      next(err);
+      next(err as unknown as Error);
     }
   };
 

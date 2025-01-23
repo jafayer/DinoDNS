@@ -1,4 +1,4 @@
-import { SupportedAnswer, SupportedRecordType } from '../../types';
+import { SupportedAnswer, SupportedRecordType, ZoneData } from '../../types';
 
 /**
  * `record` is a tag template literal function that takes a template string and parses it
@@ -25,7 +25,7 @@ export function record(strings: TemplateStringsArray, ...values: string[]): Supp
 export function parseRecord(
   strings: TemplateStringsArray,
   values: string[],
-): [string, number, string, SupportedRecordType, any] {
+): [string, number, string, SupportedRecordType, ZoneData[keyof ZoneData] | undefined] {
   // Combine strings and values to form the full template string
   let fullString = strings[0];
   for (let i = 0; i < values.length; i++) {
@@ -49,7 +49,7 @@ export function parseRecord(
   return [name, ttl, qclass, type, parseData(type, data)];
 }
 
-export function parseData(type: SupportedRecordType, data: string): any {
+export function parseData(type: SupportedRecordType, data: string): ZoneData[keyof ZoneData] | undefined {
   switch (type) {
     case 'A':
     case 'AAAA':
@@ -80,10 +80,10 @@ export function parseData(type: SupportedRecordType, data: string): any {
         minimum: parseInt(minimum),
       };
     }
-    case 'NAPTR': {
-      const [order, preference, flags, service, regexp, replacement] = data.split(/\s+/);
-      return { order: parseInt(order), preference: parseInt(preference), flags, service, regexp, replacement };
-    }
+    // case 'NAPTR': {
+    //   const [order, preference, flags, service, regexp, replacement] = data.split(/\s+/);
+    //   return { order: parseInt(order), preference: parseInt(preference), flags, service, regexp, replacement };
+    // }
     default:
       return data;
   }

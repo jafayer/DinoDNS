@@ -1,12 +1,11 @@
 import { Forwarder } from './forward';
 import { DNSRequest, DNSResponse } from '../../types';
-import { DefaultStore, Store } from '../storage';
 import { SupportedNetworkType } from '../../common/network';
 
 describe('Forwarder', () => {
   let forwarder: Forwarder;
-  let req: any;
-  let res: any;
+  let req: DNSRequest;
+  let res: DNSResponse;
   let next: jest.Mock;
 
   beforeEach(() => {

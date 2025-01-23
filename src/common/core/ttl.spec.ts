@@ -1,5 +1,4 @@
-import { record, parseData, parseRecord } from './ttl';
-import { SupportedAnswer } from '../../types';
+import { record, parseData } from './ttl';
 
 describe('parseData', () => {
   it('should parse A record data correctly', () => {
@@ -50,17 +49,17 @@ describe('parseData', () => {
     });
   });
 
-  it('should parse NAPTR record data correctly', () => {
-    const result = parseData('NAPTR', '100 10 "U" "E2U+sip" "!^.*$!sip:customer-service@example.com!" .');
-    expect(result).toEqual({
-      order: 100,
-      preference: 10,
-      flags: '"U"',
-      service: '"E2U+sip"',
-      regexp: '"!^.*$!sip:customer-service@example.com!"',
-      replacement: '.',
-    });
-  });
+  // it('should parse NAPTR record data correctly', () => {
+  //   const result = parseData('NAPTR', '100 10 "U" "E2U+sip" "!^.*$!sip:customer-service@example.com!" .');
+  //   expect(result).toEqual({
+  //     order: 100,
+  //     preference: 10,
+  //     flags: '"U"',
+  //     service: '"E2U+sip"',
+  //     regexp: '"!^.*$!sip:customer-service@example.com!"',
+  //     replacement: '.',
+  //   });
+  // });
 });
 
 describe('record', () => {

@@ -1,6 +1,5 @@
 import { ACL } from './acl';
 import { DNSRequest, DNSResponse } from '../../types';
-import { DefaultStore, Store } from '../storage';
 import { SupportedNetworkType } from '../../common/network';
 
 describe('ACL Handler', () => {
