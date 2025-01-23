@@ -29,7 +29,10 @@ export class ACL {
     this.continueOnFail = continueOnFail;
 
     for (const range of ranges) {
-      const [address, mask] = range.trim().split('/').map((x) => x.trim());
+      const [address, mask] = range
+        .trim()
+        .split('/')
+        .map((x) => x.trim());
       if (!isIP(address) || !mask || isNaN(parseInt(mask))) {
         throw new Error(`Invalid IP range: ${range}`);
       }

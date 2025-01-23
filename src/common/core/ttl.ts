@@ -15,39 +15,39 @@ import { SupportedAnswer, SupportedRecordType } from '../../types';
  */
 export function record(strings: TemplateStringsArray, ...values: string[]): SupportedAnswer | undefined {
   const [name, ttl, qclass, type, data] = parseRecord(strings, values);
-  if(!data) {
+  if (!data) {
     return undefined;
   }
-  
+
   return { name, type, class: qclass, ttl, data } as SupportedAnswer;
 }
 
 export function parseRecord(
-    strings: TemplateStringsArray,
-    values: string[],
-  ): [string, number, string, SupportedRecordType, any] {
-    // Combine strings and values to form the full template string
-    let fullString = strings[0];
-    for (let i = 0; i < values.length; i++) {
-      fullString += values[i] + strings[i + 1];
-    }
-  
-    const parts = fullString.split(/\s+/);
-    const name = parts[0];
-    let ttl = 300;
-    let typeIndex = 1;
-  
-    if (!isNaN(parseInt(parts[1]))) {
-      ttl = parseInt(parts[1]);
-      typeIndex = 2;
-    }
-  
-    const qclass = parts[typeIndex];
-    const type = parts[typeIndex + 1] as SupportedRecordType;
-    const data = parts.slice(typeIndex + 2).join(' ');
-  
-    return [name, ttl, qclass, type, parseData(type, data)];
+  strings: TemplateStringsArray,
+  values: string[],
+): [string, number, string, SupportedRecordType, any] {
+  // Combine strings and values to form the full template string
+  let fullString = strings[0];
+  for (let i = 0; i < values.length; i++) {
+    fullString += values[i] + strings[i + 1];
   }
+
+  const parts = fullString.split(/\s+/);
+  const name = parts[0];
+  let ttl = 300;
+  let typeIndex = 1;
+
+  if (!isNaN(parseInt(parts[1]))) {
+    ttl = parseInt(parts[1]);
+    typeIndex = 2;
+  }
+
+  const qclass = parts[typeIndex];
+  const type = parts[typeIndex + 1] as SupportedRecordType;
+  const data = parts.slice(typeIndex + 2).join(' ');
+
+  return [name, ttl, qclass, type, parseData(type, data)];
+}
 
 export function parseData(type: SupportedRecordType, data: string): any {
   switch (type) {
@@ -60,7 +60,7 @@ export function parseData(type: SupportedRecordType, data: string): any {
     case 'MX': {
       const [priority, exchange] = data.split(/\s+/);
       if (!exchange || !priority || isNaN(parseInt(priority))) {
-        return undefined
+        return undefined;
       }
       return { priority: parseInt(priority), exchange };
     }
