@@ -150,6 +150,10 @@ export class DefaultStore extends EventEmitter implements Store {
     }
   }
 
+  list() {
+    return Array.from(this.data.keys());
+  }
+
   /**
    * The handler for the store, used in the framework to answer queries.
    */
