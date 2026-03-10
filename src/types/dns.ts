@@ -61,3 +61,25 @@ export type ZoneDataMap = {
 export type SupportedAnswer = Exclude<Answer, OptAnswer>;
 export type SupportedRecordType = Exclude<RecordType, 'OPT'>;
 export type SupportedQuestion = Question & { type: SupportedRecordType };
+
+/**
+ * Creates a well-typed SupportedAnswer object for the given record type.
+ *
+ * This is a convenience helper that constructs a DNS answer object compatible
+ * with the dns-packet library, ensuring the data type corresponds to the record
+ * type at compile time.
+ *
+ * @param name The domain name for the answer
+ * @param type The DNS record type
+ * @param data The record data, typed to match the record type
+ * @param ttl Optional TTL in seconds
+ * @returns A well-typed SupportedAnswer object
+ */
+export function makeAnswer<T extends SupportedRecordType>(
+  name: string,
+  type: T,
+  data: ZoneData[T],
+  ttl?: number,
+): SupportedAnswer {
+  return { name, type, data, ...(ttl !== undefined ? { ttl } : {}) } as SupportedAnswer;
+}
