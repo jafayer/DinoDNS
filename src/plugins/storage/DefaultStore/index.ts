@@ -1,4 +1,4 @@
-import { ZoneData, SupportedRecordType, SupportedAnswer, ZoneDataMap } from '../../../types/dns';
+import { ZoneData, SupportedRecordType, ZoneDataMap, makeAnswer } from '../../../types/dns';
 import { Store } from '../Store';
 import { EventEmitter } from 'events';
 import { DNSRequest, DNSResponse, NextFunction } from '../../../types/server';
@@ -165,18 +165,9 @@ export class DefaultStore extends EventEmitter implements Store {
 
     if (records) {
       res.answer(
-        Object.entries(records)
-          .map(([rType, data]) => {
-            return data.map(
-              (d) =>
-                ({
-                  name,
-                  type: rType,
-                  data: d,
-                }) as SupportedAnswer,
-            );
-          })
-          .flat(),
+        (Object.keys(records) as Array<SupportedRecordType>).flatMap((rType) => {
+          return records[rType].map((d) => makeAnswer(name, rType, d));
+        }),
       );
 
       if (this.shouldCache) {

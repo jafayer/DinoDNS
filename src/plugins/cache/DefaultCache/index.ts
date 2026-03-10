@@ -1,6 +1,6 @@
 import { Cache } from '../Cache';
 import { Handler } from '../../../types/server';
-import { ZoneData, SupportedRecordType, SupportedAnswer } from '../../../types/dns';
+import { SupportedRecordType, SupportedAnswer } from '../../../types/dns';
 import { isEqual as _isEqual } from 'lodash';
 
 export type DefaultCacheOptions = {
@@ -12,7 +12,7 @@ export type DefaultCacheOptions = {
  * A simple in-memory cache that stores data in a Map.
  *
  * The default cache is a simple map that stores domain/record type pairs as keys and
- * the corresponding data as values.
+ * the corresponding answers as values.
  *
  * The cache makes no attempt to implement an LRU eviction policy, as these can be
  * computationally expensive to manage and may not necessarily provide a significant benefit
@@ -21,7 +21,7 @@ export type DefaultCacheOptions = {
  */
 export class DefaultCache extends Cache {
   /** The internal cache data structure */
-  cache: Map<string, ZoneData[keyof ZoneData][]> = new Map();
+  cache: Map<string, SupportedAnswer[]> = new Map();
 
   /** The maximum number of entries the cache should accept before discarding an entry. */
   maxEntries: number | undefined;
@@ -38,11 +38,11 @@ export class DefaultCache extends Cache {
    *
    * @param zone The zone to get data for
    * @param rType The record type to get data for.
-   * @returns The data for the given zone and record type, or null if no data is found.
+   * @returns The answers for the given zone and record type, or null if no data is found.
    */
-  get<T extends SupportedRecordType>(zone: string, rType: T): ZoneData[T][] | ZoneData[keyof ZoneData][] | null {
+  get(zone: string, rType: SupportedRecordType): SupportedAnswer[] | null {
     const key = DefaultCache.getKey(zone, rType);
-    return this.cache.get(key) || null;
+    return this.cache.get(key) ?? null;
   }
 
   /**
@@ -50,21 +50,19 @@ export class DefaultCache extends Cache {
    *
    * @param zone The zone to set
    * @param rType The record type to set
-   * @param data The data to set
+   * @param data The answer or answers to set
    */
-  set<T extends SupportedRecordType>(zone: string, rType: T, data: ZoneData[T] | ZoneData[keyof ZoneData][]) {
+  set(zone: string, rType: SupportedRecordType, data: SupportedAnswer | SupportedAnswer[]) {
     if (this.maxEntries === 0) return;
 
-    if (!Array.isArray(data)) {
-      data = [data];
-    }
+    const answers = Array.isArray(data) ? data : [data];
 
     if (this.maxEntries && this.cache.size >= this.maxEntries) {
       this.evictRandomMember();
     }
 
     const key = DefaultCache.getKey(zone, rType);
-    this.cache.set(key, data);
+    this.cache.set(key, answers);
   }
 
   /**
@@ -72,13 +70,13 @@ export class DefaultCache extends Cache {
    *
    * @param zone The zone to append
    * @param rType The record type to append
-   * @param data The data to append
+   * @param data The answer to append
    */
-  append(zone: string, rType: SupportedRecordType, data: ZoneData[SupportedRecordType]) {
+  append(zone: string, rType: SupportedRecordType, data: SupportedAnswer) {
     if (this.maxEntries === 0) return;
 
     const key = DefaultCache.getKey(zone, rType);
-    const existing = this.cache.get(key) || [];
+    const existing = this.cache.get(key) ?? [];
     this.cache.set(key, [...existing, data]);
 
     if (this.maxEntries && this.cache.size > this.maxEntries) {
@@ -91,13 +89,13 @@ export class DefaultCache extends Cache {
    *
    * @param zone The zone to delete
    * @param rType The record type to delete
-   * @param data The data to delete
+   * @param data The specific answer to delete, or all answers if omitted
    */
-  delete(zone: string, rType: SupportedRecordType, data?: ZoneData[SupportedRecordType]) {
+  delete(zone: string, rType: SupportedRecordType, data?: SupportedAnswer) {
     const key = DefaultCache.getKey(zone, rType);
 
     if (data) {
-      const existing = this.cache.get(key) || [];
+      const existing = this.cache.get(key) ?? [];
       const newRecords = existing.filter((d) => !_isEqual(d, data));
       if (newRecords.length === 0) {
         this.cache.delete(key);
@@ -138,16 +136,7 @@ export class DefaultCache extends Cache {
     }
 
     const { name, type } = req.packet.questions[0];
-    const data = this.get(name, type);
-
-    const answers: SupportedAnswer[] | undefined = data?.map(
-      (d) =>
-        ({
-          name,
-          type,
-          data: d,
-        }) as SupportedAnswer,
-    );
+    const answers = this.get(name, type);
 
     if (answers) {
       res.answer(answers);

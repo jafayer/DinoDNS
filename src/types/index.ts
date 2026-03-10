@@ -1,4 +1,4 @@
-export { SupportedAnswer, SupportedQuestion, SupportedRecordType, ZoneData, ZoneDataMap } from './dns';
+export { SupportedAnswer, SupportedQuestion, SupportedRecordType, ZoneData, ZoneDataMap, makeAnswer } from './dns';
 export {
   CanAnswer,
   DNSRequest,

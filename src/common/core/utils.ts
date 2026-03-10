@@ -1,6 +1,5 @@
 import { Handler } from '../../types';
 import { Cache } from '../../plugins/cache';
-import { ZoneData } from '../../types';
 
 export type Awaitable<T> = T | Promise<T>;
 
@@ -60,14 +59,10 @@ export const registerCache = (cache: Cache): Handler => {
   return (req, res, next) => {
     res.on('done', () => {
       // register the cache on the response
-      if (!req.packet.answers || !res.packet.answers.length) return;
+      if (!res.packet.answers.length) return;
 
-      type t = (typeof req.packet.questions)[0]['type'];
-      cache.set<t>(
-        req.packet.questions[0].name,
-        req.packet.questions[0].type,
-        req.packet.answers.map(({ data }) => data as ZoneData[t]),
-      );
+      const { name, type } = req.packet.questions[0];
+      cache.set(name, type, [...res.packet.answers]);
     });
 
     next();
