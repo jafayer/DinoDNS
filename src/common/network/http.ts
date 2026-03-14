@@ -1,4 +1,6 @@
-import http2 from 'http2';
+import express from 'express';
+import http from 'http';
+import https from 'https';
 import { Network, NetworkHandler, SupportedNetworkType, Connection, SSLConfig } from './net';
 import { EventEmitter } from 'events';
 import { DNSPacketSerializer } from '../serializer';
@@ -14,12 +16,16 @@ export interface DNSOverHTTPProps {
 
 /**
  * DNSOverHTTP is a network interface for handling DNS requests over HTTP(S).
+ *
+ * It uses Express to handle incoming HTTP requests and route them to the
+ * appropriate DNS handler.
  */
 export class DNSOverHTTP extends EventEmitter implements Network<dnsPacket.Packet> {
   public address: string;
   public port: number;
   private ssl?: SSLConfig;
-  public server: http2.Http2Server;
+  public app: express.Application;
+  public server: http.Server | https.Server;
   public serializer: DNSPacketSerializer = new DNSPacketSerializer();
   public networkType: SupportedNetworkType.HTTP | SupportedNetworkType.HTTPS;
   public handler?: NetworkHandler;
@@ -32,47 +38,46 @@ export class DNSOverHTTP extends EventEmitter implements Network<dnsPacket.Packe
     this.port = port;
     this.ssl = ssl;
     this.maxConnections = maxConnections;
-    this.server = ssl ? http2.createSecureServer({ key: ssl.key, cert: ssl.cert }) : http2.createServer();
-    this.server.maxConnections = maxConnections;
-
     this.networkType = ssl ? SupportedNetworkType.HTTPS : SupportedNetworkType.HTTP;
 
-    setupServer(this.server, this);
+    this.app = express();
+    this.app.use('/dns-query', express.raw({ type: 'application/dns-message' }));
+
+    this.server = ssl
+      ? https.createServer({ key: ssl.key, cert: ssl.cert }, this.app)
+      : http.createServer(this.app);
+
+    if (isFinite(maxConnections)) {
+      this.server.maxConnections = maxConnections;
+    }
+
+    setupRoutes(this.app, this);
   }
 
   async listen(callback?: () => void): Promise<void> {
-    this.server.listen(this.port, callback);
+    this.server.listen(this.port, this.address, callback);
   }
 
   async close(): Promise<void> {
     this.server.close();
   }
 
-  toConnection(stream: http2.Http2Stream): Connection {
+  toConnection(req: express.Request): Connection {
     return {
-      remoteAddress: stream.session?.socket.remoteAddress || '',
-      remotePort: stream.session?.socket.remotePort || 0,
-      type: SupportedNetworkType.HTTP,
+      remoteAddress: req.socket?.remoteAddress || req.ip || '',
+      remotePort: req.socket?.remotePort || 0,
+      type: this.networkType,
     };
   }
 }
 
-function packetFromGET(headers: http2.IncomingHttpHeaders) {
-  if (!headers[':path']) {
-    return;
-  }
-
-  const queryString = new URLSearchParams(headers[':path'].split('?')[1]);
-  return constructPacketFromQuery(queryString);
-}
-
-function constructPacketFromQuery(query: URLSearchParams): dnsPacket.Packet | undefined {
+function packetFromGET(query: URLSearchParams): dnsPacket.Packet | undefined {
   const dns = query.get('dns');
   const name = query.get('name');
   const type = query.get('type');
 
   if (dns) {
-    return dnsPacket.decode(Buffer.from(dns, 'base64'));
+    return dnsPacket.decode(Buffer.from(dns, 'base64url'));
   } else if (name && type) {
     return {
       type: 'query',
@@ -86,94 +91,75 @@ function constructPacketFromQuery(query: URLSearchParams): dnsPacket.Packet | un
         },
       ],
     };
-  } else {
-    return;
   }
+
+  return undefined;
 }
 
-function setupServer(server: http2.Http2Server | http2.Http2SecureServer, doh: DNSOverHTTP) {
-  server.on('error', (err) => {
-    console.error(err);
-  });
+function setupRoutes(app: express.Application, doh: DNSOverHTTP) {
+  async function handleDNSRequest(
+    req: express.Request,
+    res: express.Response,
+    packet: dnsPacket.Packet | undefined,
+  ): Promise<void> {
+    if (!doh.handler) {
+      res.status(500).end();
+      return;
+    }
 
-  server.on('stream', (stream, headers) => {
+    if (!packet) {
+      res.status(400).end();
+      return;
+    }
+
     const startTime = process.hrtime.bigint();
     const startTimeMs = Date.now();
 
+    const request = new DNSRequest(packet, doh.toConnection(req));
+    request.metadata.ts.requestTimeNs = startTime;
+    request.metadata.ts.requestTimeMs = startTimeMs;
+
+    const response = await doh.handler(request);
+    const body = doh.serializer.encode(response.packet.raw);
+    res.set('Content-Type', 'application/dns-message');
+    res.set('Content-Length', String(body.length));
+    res.status(200).send(body);
+
+    response.metadata.ts.responseTimeNs = process.hrtime.bigint();
+    response.metadata.ts.responseTimeMs = Date.now();
+    response.emit('done', response);
+    response.removeAllListeners();
+  }
+
+  app.get('/dns-query', async (req: express.Request, res: express.Response) => {
     if (!doh.handler) {
-      throw new Error('No handler defined for DNSOverHTTP');
+      res.status(500).end();
+      return;
     }
 
-    let data = Buffer.alloc(0);
-    stream.on('data', (chunk) => {
-      data = Buffer.concat([data, Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)]);
-    });
-
-    stream.on('end', async () => {
-      if (!doh.handler) {
-        throw new Error('No handler defined for DNSOverHTTP');
-      }
-
-      // respond only on /dns-query
-      if (!headers[':path']?.startsWith('/dns-query')) {
-        stream.respond({
-          ':status': 404,
-        });
-        stream.end();
-        return;
-      }
-
-      try {
-        let packet: dnsPacket.Packet | undefined;
-        switch (headers[':method']) {
-          case 'GET': {
-            packet = packetFromGET(headers);
-            break;
-          }
-          case 'POST': {
-            packet = doh.serializer.decode(data);
-            break;
-          }
-          default: {
-            // unsupported method
-            break;
-          }
-        }
-
-        if (!packet) {
-          stream.respond({
-            ':status': 400,
-          });
-          stream.end();
-          return;
-        }
-        const request = new DNSRequest(packet, doh.toConnection(stream));
-        request.metadata.ts.requestTimeNs = startTime;
-        request.metadata.ts.requestTimeMs = startTimeMs;
-        const response = await doh.handler(request);
-        const body = doh.serializer.encode(response.packet.raw);
-        stream.respond({
-          ':status': 200,
-          'Content-Type': 'application/dns-message',
-          'Content-Length': body.length,
-        });
-        stream.end(body);
-        response.metadata.ts.responseTimeNs = process.hrtime.bigint();
-        response.metadata.ts.responseTimeMs = Date.now();
-        response.emit('done', response);
-        response.removeAllListeners(); // cleanup
-      } catch (err) {
-        console.error(err);
-        stream.respond({
-          ':status': 500,
-        });
-        stream.end();
-      }
-    });
-
-    stream.on('error', (err) => {
+    try {
+      const query = new URLSearchParams(req.url.split('?')[1] ?? '');
+      const packet = packetFromGET(query);
+      await handleDNSRequest(req, res, packet);
+    } catch (err) {
       console.error(err);
-      stream.end();
-    });
+      res.status(500).end();
+    }
+  });
+
+  app.post('/dns-query', async (req: express.Request, res: express.Response) => {
+    if (!doh.handler) {
+      res.status(500).end();
+      return;
+    }
+
+    try {
+      const body = req.body as Buffer;
+      const packet = Buffer.isBuffer(body) ? doh.serializer.decode(body) : undefined;
+      await handleDNSRequest(req, res, packet);
+    } catch (err) {
+      console.error(err);
+      res.status(500).end();
+    }
   });
 }
