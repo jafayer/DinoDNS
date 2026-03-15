@@ -17,12 +17,12 @@ export enum RCode {
   NOT_ZONE = 0x0009,
 }
 /**
- * Per the [dns-packet docs](https://www.npmjs.com/package/dns-packet)
+ * Combine multiple flag values using bitwise OR.
  *
- * > To use more than one flag bitwise-or them together
- *   `packet.RECURSION_DESIRED | packet.RECURSION_AVAILABLE`
- * > And to check for a flag use bitwise-and
- *   `message.flags & packet.RECURSION_DESIRED`
+ * To use more than one flag bitwise-or them together:
+ *   `RECURSION_DESIRED | RECURSION_AVAILABLE`
+ * To check for a flag use bitwise-and:
+ *   `flags & RECURSION_DESIRED`
  * @param flags number[]
  * @returns number
  */

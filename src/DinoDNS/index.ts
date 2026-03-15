@@ -2,10 +2,10 @@ import { DefaultServer, DefaultServerProps } from '../common/server';
 import { Logger } from '../plugins/loggers';
 import { Cache } from '../plugins/cache';
 import { Store } from '../plugins/storage';
-import dnsPacket from 'dns-packet';
+import type { Packet } from '../types/dns';
 import { registerCache } from '../common/core/utils';
 
-export type DinoDNSProps = DefaultServerProps<dnsPacket.Packet> & {
+export type DinoDNSProps = DefaultServerProps<Packet> & {
   cache?: Cache;
   storage?: Store;
   logger?: Logger;

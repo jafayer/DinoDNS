@@ -1,18 +1,19 @@
 import { Network, NetworkHandler, SupportedNetworkType, Connection } from './net';
 import { Serializer } from '../serializer';
 import dgram from 'dgram';
-import dnsPacket, { TRUNCATED_RESPONSE } from 'dns-packet';
+import type { Packet } from '../../types/dns';
+import { encode, decode, encodingLength, TRUNCATED_RESPONSE } from './dns';
 import { RCode, CombineFlags } from '../core/utils';
 import { DNSRequest } from '../../types';
 import { isIPv6 } from 'net';
 
 /**
- * Serializer for the UDP protocol. The `dns-packet` module's
- * `decode` and `encode` methods are passed directly through here.
+ * Serializer for the UDP protocol.  Uses the built-in zero-copy DNS codec –
+ * no third-party runtime dependency required.
  */
-export class UDPSerializer implements Serializer<dnsPacket.Packet> {
-  encode(packet: dnsPacket.Packet): Buffer {
-    let packetSize = dnsPacket.encodingLength(packet);
+export class UDPSerializer implements Serializer<Packet> {
+  encode(packet: Packet): Buffer {
+    let packetSize = encodingLength(packet);
     if (packetSize > 512) {
       // bitwise OR to include the truncated response flag
       const newFlags = (packet.flags || 0) | TRUNCATED_RESPONSE;
@@ -23,32 +24,33 @@ export class UDPSerializer implements Serializer<dnsPacket.Packet> {
       if (packet.additionals && packet.additionals.length) {
         packet.additionals = [];
 
-        packetSize = dnsPacket.encodingLength(packet);
+        packetSize = encodingLength(packet);
         continue;
       }
 
       if (packet.authorities && packet.authorities.length) {
         packet.authorities = [];
 
-        packetSize = dnsPacket.encodingLength(packet);
+        packetSize = encodingLength(packet);
         continue;
       }
 
       if (packet.answers && packet.answers.length) {
         packet.answers = packet.answers.slice(0, packet.answers.length - 1);
 
-        packetSize = dnsPacket.encodingLength(packet);
+        packetSize = encodingLength(packet);
         continue;
       }
 
       break;
     }
 
-    return dnsPacket.encode(packet);
+    return encode(packet);
   }
 
-  decode(buffer: Buffer): dnsPacket.Packet {
-    return dnsPacket.decode(buffer);
+  decode(buffer: Buffer): Packet {
+    // Kept for compatibility; network handler now uses the raw buffer directly.
+    return decode(buffer);
   }
 }
 
@@ -61,7 +63,7 @@ export interface DNSOverUDPProps {
 /**
  * DNSOverUDP is a network interface for handling DNS requests over UDP.
  */
-export class DNSOverUDP implements Network<dnsPacket.Packet> {
+export class DNSOverUDP implements Network<Packet> {
   public address: string;
   public port: number;
   private server: dgram.Socket;
@@ -79,7 +81,7 @@ export class DNSOverUDP implements Network<dnsPacket.Packet> {
       const startTime = process.hrtime.bigint();
       const startTimeMs = Date.now();
       if (!this.handler) {
-        const response = dnsPacket.encode({
+        const response = encode({
           type: 'response',
           id: 0,
           flags: CombineFlags([RCode.NOT_IMPLEMENTED]),
@@ -92,8 +94,9 @@ export class DNSOverUDP implements Network<dnsPacket.Packet> {
         return this.server.send(new Uint8Array(response), rinfo.port, rinfo.address);
       }
 
-      const packet = this.serializer.decode(msg);
-      const request = new DNSRequest(packet, this.toConnection(rinfo));
+      // Zero-copy path: pass the raw buffer directly to DNSRequest.
+      // PacketWrapper will read header fields from the buffer without a full decode.
+      const request = new DNSRequest(msg, this.toConnection(rinfo));
       request.metadata.ts.requestTimeNs = startTime;
       request.metadata.ts.requestTimeMs = startTimeMs;
       this.handler(request)

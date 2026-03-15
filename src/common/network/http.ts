@@ -2,7 +2,8 @@ import http2 from 'http2';
 import { Network, NetworkHandler, SupportedNetworkType, Connection, SSLConfig } from './net';
 import { EventEmitter } from 'events';
 import { DNSPacketSerializer } from '../serializer';
-import dnsPacket from 'dns-packet';
+import type { Packet, RecordType } from '../../types/dns';
+import { decode } from './dns';
 import { DNSRequest } from '../../types';
 
 export interface DNSOverHTTPProps {
@@ -15,7 +16,7 @@ export interface DNSOverHTTPProps {
 /**
  * DNSOverHTTP is a network interface for handling DNS requests over HTTP(S).
  */
-export class DNSOverHTTP extends EventEmitter implements Network<dnsPacket.Packet> {
+export class DNSOverHTTP extends EventEmitter implements Network<Packet> {
   public address: string;
   public port: number;
   private ssl?: SSLConfig;
@@ -66,13 +67,13 @@ function packetFromGET(headers: http2.IncomingHttpHeaders) {
   return constructPacketFromQuery(queryString);
 }
 
-function constructPacketFromQuery(query: URLSearchParams): dnsPacket.Packet | undefined {
+function constructPacketFromQuery(query: URLSearchParams): Packet | undefined {
   const dns = query.get('dns');
   const name = query.get('name');
   const type = query.get('type');
 
   if (dns) {
-    return dnsPacket.decode(Buffer.from(dns, 'base64'));
+    return decode(Buffer.from(dns, 'base64'));
   } else if (name && type) {
     return {
       type: 'query',
@@ -80,7 +81,7 @@ function constructPacketFromQuery(query: URLSearchParams): dnsPacket.Packet | un
       flags: 0,
       questions: [
         {
-          type: type as dnsPacket.RecordType,
+          type: type as RecordType,
           class: 'IN',
           name,
         },
@@ -124,7 +125,7 @@ function setupServer(server: http2.Http2Server | http2.Http2SecureServer, doh: D
       }
 
       try {
-        let packet: dnsPacket.Packet | undefined;
+        let packet: Packet | undefined;
         switch (headers[':method']) {
           case 'GET': {
             packet = packetFromGET(headers);

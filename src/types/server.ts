@@ -1,4 +1,4 @@
-import dnsPacket from 'dns-packet';
+import type { Packet, Answer, Question } from '../types/dns';
 import { Connection } from '../common/network';
 import { CombineFlags, RCode } from '../common/core/utils';
 import { SupportedAnswer, SupportedQuestion } from '../types/dns';
@@ -10,7 +10,9 @@ import {
   RECURSION_AVAILABLE,
   RECURSION_DESIRED,
   TRUNCATED_RESPONSE,
-} from 'dns-packet';
+  parseQuestions,
+  QR_MASK,
+} from '../common/network/dns';
 import { HasFlag } from '../common/core/utils';
 
 /**
@@ -65,53 +67,86 @@ export class DuplicateAnswerForRequest extends Error {
 }
 
 /**
- * The packet wrapper class is intended to solve a couple of problems with the provided `Packet type
- * from `dns-packet`.
+ * The packet wrapper class solves several problems with raw DNS packet objects.
  *
- * The first is that there's currently no way to provide a read-only view of the packet, which is
- * essential for ensuring that the packet is not modified after it has been sent.
+ * **Zero-copy parsing**: When the wrapper is created from a raw wire-format
+ * `Buffer` (e.g. when an incoming query arrives over UDP/TCP), header fields
+ * such as `id` and `flags` are read directly from fixed buffer offsets without
+ * allocating any intermediate JS objects.  The question section is parsed
+ * lazily the first time `.questions` is accessed and the result is cached.
  *
- * The second is that many of the properties of the packet are optional, which leads to some awkward
- * type assertions when using the raw packet. For example, any time you want to access the `answers`
- * property, you have to assert that it's not `undefined` or `null`, despite the fact that we can set
- * it to an empty array if it's not provided. Likewise, `questions` in practice should never be
- * undefined, though it could of course be an empty array.
+ * **Read-only view**: The wrapper can be frozen after the response has been
+ * sent so that any later mutation attempt throws a `ModifiedAfterSentError`.
  *
- * This class is not generic because it heavily relies on the structure of the `Packet` type from
- * `dns-packet`. If the `Packet` type changes, this class will need to be updated.
+ * **Normalised API**: Optional properties of the raw packet (questions,
+ * answers, …) are always exposed as non-nullable arrays so callers do not
+ * need to handle `undefined`.
  */
 export class PacketWrapper {
-  /** The raw DNS packet */
-  raw: dnsPacket.Packet;
+  /**
+   * Primary wire-format buffer.  Present when the wrapper was created from
+   * a raw incoming buffer.  Used as the zero-copy source for header reads.
+   */
+  private _buf: Buffer | null = null;
+
+  // ── cached parsed fields (null = not yet read / not yet set) ──────────────
+  private _id: number | null = null;
+  private _type: 'query' | 'response' | null = null;
+  private _flags: number | null = null;
+  private _questions: SupportedQuestion[] | null = null;
+  private _answers: SupportedAnswer[] = [];
+  private _authorities: Answer[] = [];
+  private _additionals: Answer[] = [];
 
   /** A flag to indicate whether the packet has been sent and is therefore frozen */
   frozen: boolean = false;
 
   /**
    * Create a new packet wrapper.
-   * @param packet The raw DNS packet
+   *
+   * @param source Either a plain `Packet` JS object (legacy /
+   *   programmatically constructed) or a raw wire-format `Buffer` for
+   *   zero-copy access.
    */
-  constructor(packet: dnsPacket.Packet) {
-    this.raw = packet;
+  constructor(source: Packet | Buffer) {
+    if (Buffer.isBuffer(source)) {
+      // Zero-copy path: keep the raw buffer; parse header fields on demand.
+      this._buf = source;
+    } else {
+      // JS-object path: copy all fields out of the plain object.
+      this._id = source.id ?? 0;
+      this._type = source.type ?? 'query';
+      this._flags = source.flags ?? 0;
+      this._questions = (source.questions as SupportedQuestion[]) ?? [];
+      this._answers = (source.answers as SupportedAnswer[]) ?? [];
+      this._authorities = source.authorities ?? [];
+      this._additionals = source.additionals ?? [];
+    }
   }
+
+  // ── header fields ──────────────────────────────────────────────────────────
 
   get id(): number {
-    return this.raw.id || 0;
+    if (this._id !== null) return this._id;
+    if (this._buf) return this._buf.readUInt16BE(0);
+    return 0;
   }
 
-  get type(): dnsPacket.Packet['type'] {
-    return this.raw.type;
+  get type(): 'query' | 'response' {
+    if (this._type !== null) return this._type;
+    if (this._buf) return this._buf.readUInt16BE(2) & QR_MASK ? 'response' : 'query';
+    return 'query';
   }
 
-  set type(type: dnsPacket.Packet['type']) {
-    if (this.frozen) {
-      throw new ModifiedAfterSentError();
-    }
-    this.raw.type = type;
+  set type(type: 'query' | 'response') {
+    if (this.frozen) throw new ModifiedAfterSentError();
+    this._type = type;
   }
 
   get flags(): number {
-    return this.raw.flags || 0;
+    if (this._flags !== null) return this._flags;
+    if (this._buf) return this._buf.readUInt16BE(2);
+    return 0;
   }
 
   get flagsArray(): string[] {
@@ -124,7 +159,7 @@ export class PacketWrapper {
       HasFlag(flags, RECURSION_AVAILABLE) ? 'ra' : '',
       HasFlag(flags, AUTHENTIC_DATA) ? 'ad' : '',
       HasFlag(flags, CHECKING_DISABLED) ? 'cd' : '',
-    ].filter(Boolean); // Remove empty strings
+    ].filter(Boolean);
   }
 
   get rcode(): keyof typeof RCode {
@@ -132,92 +167,108 @@ export class PacketWrapper {
   }
 
   set rcode(rcode: RCode) {
-    if (this.frozen) {
-      throw new ModifiedAfterSentError();
-    }
+    if (this.frozen) throw new ModifiedAfterSentError();
 
     if (!Object.values(RCode).includes(rcode)) {
       throw new Error('Invalid rcode');
     }
 
     // Clear the last 4 bits (rcode) and set the new rcode
-    this.raw.flags = CombineFlags([this.flags & 0xfff0, rcode]);
+    this._flags = CombineFlags([this.flags & 0xfff0, rcode]);
   }
 
   set flags(flags: number) {
-    if (this.frozen) {
-      throw new ModifiedAfterSentError();
-    }
-    this.raw.flags = flags;
+    if (this.frozen) throw new ModifiedAfterSentError();
+    this._flags = flags;
   }
 
   addFlag(flag: number) {
-    if (this.frozen) {
-      throw new ModifiedAfterSentError();
-    }
-    this.raw.flags = this.flags | flag;
+    if (this.frozen) throw new ModifiedAfterSentError();
+    this._flags = this.flags | flag;
   }
 
   removeFlag(flag: number) {
-    if (this.frozen) {
-      throw new ModifiedAfterSentError();
-    }
-    this.raw.flags = this.flags & ~flag;
+    if (this.frozen) throw new ModifiedAfterSentError();
+    this._flags = this.flags & ~flag;
   }
+
+  // ── section arrays ─────────────────────────────────────────────────────────
 
   get questions(): ReadonlyArray<SupportedQuestion> {
-    return (this.raw.questions as ReadonlyArray<SupportedQuestion>) || [];
+    if (this._questions !== null) return this._questions;
+    if (this._buf) {
+      // Lazy zero-copy parse: read questions directly from the buffer.
+      this._questions = parseQuestions(this._buf) as SupportedQuestion[];
+    } else {
+      // No buffer available and no cached questions – normalise to empty array.
+      this._questions = [];
+    }
+    return this._questions;
   }
 
-  set questions(questions: dnsPacket.Question[]) {
-    if (this.frozen) {
-      throw new ModifiedAfterSentError();
-    }
-    this.raw.questions = questions;
+  set questions(questions: Question[]) {
+    if (this.frozen) throw new ModifiedAfterSentError();
+    this._questions = questions as SupportedQuestion[];
   }
 
   get answers(): ReadonlyArray<SupportedAnswer> {
-    return (this.raw.answers as ReadonlyArray<SupportedAnswer>) || [];
+    return this._answers;
   }
 
   set answers(answers: SupportedAnswer[]) {
-    if (this.frozen) {
-      throw new ModifiedAfterSentError();
-    }
-    this.raw.answers = answers;
+    if (this.frozen) throw new ModifiedAfterSentError();
+    this._answers = answers;
   }
 
-  get additionals(): ReadonlyArray<dnsPacket.Answer> {
-    return (this.raw.additionals || []) as ReadonlyArray<dnsPacket.Answer>;
+  get additionals(): ReadonlyArray<Answer> {
+    return this._additionals;
   }
 
-  set additionals(additionals: dnsPacket.Answer[]) {
-    if (this.frozen) {
-      throw new ModifiedAfterSentError();
-    }
-    this.raw.additionals = additionals;
+  set additionals(additionals: Answer[]) {
+    if (this.frozen) throw new ModifiedAfterSentError();
+    this._additionals = additionals;
   }
 
-  get authorities(): ReadonlyArray<dnsPacket.Answer> {
-    return (this.raw.authorities || []) as ReadonlyArray<dnsPacket.Answer>;
+  get authorities(): ReadonlyArray<Answer> {
+    return this._authorities;
   }
 
-  set authorities(authority: dnsPacket.Answer[]) {
-    if (this.frozen) {
-      throw new ModifiedAfterSentError();
-    }
-    this.raw.authorities = authority;
+  set authorities(authority: Answer[]) {
+    if (this.frozen) throw new ModifiedAfterSentError();
+    this._authorities = authority;
   }
+
+  // ── legacy compatibility ───────────────────────────────────────────────────
+
+  /**
+   * Return the packet as a plain `Packet` JS object.
+   *
+   * This getter is provided for backward compatibility.  The returned object
+   * is reconstructed from the internal state on every call, so consumers that
+   * need to pass it to encoders should prefer calling the encoder directly
+   * with the `PacketWrapper` instance via `encode(wrapper.raw)`.
+   */
+  get raw(): Packet {
+    return {
+      id: this.id,
+      type: this.type,
+      flags: this.flags,
+      questions: this.questions as Question[],
+      answers: this.answers as Answer[],
+      authorities: this.authorities as Answer[],
+      additionals: this.additionals as Answer[],
+    };
+  }
+
+  // ── utilities ──────────────────────────────────────────────────────────────
 
   /**
    * Create a copy of the packet wrapper.
    * @returns A copy of the packet wrapper
    */
   copy(): PacketWrapper {
-    const newRawPacket = {
-      ...this.raw,
-    };
-    return new PacketWrapper(newRawPacket);
+    // Copy by building a plain object from current state (materialises lazy fields)
+    return new PacketWrapper(this.raw);
   }
 
   /**
@@ -231,15 +282,7 @@ export class PacketWrapper {
   freeze(): PacketWrapper {
     const copy = this.copy();
     copy.frozen = true;
-
     Object.freeze(copy);
-    Object.freeze(copy.raw.type);
-    Object.freeze(copy.raw.flags);
-    Object.freeze(copy.raw.questions);
-    Object.freeze(copy.raw.answers);
-    Object.freeze(copy.raw.additionals);
-    Object.freeze(copy);
-
     return copy;
   }
 }
@@ -293,7 +336,7 @@ export class DNSResponse extends TypedEventEmitter<DNSResponseEvents> {
    * Handlers should use this object to attach any extra metadata if desired */
   extra: object | undefined;
 
-  constructor(packet: dnsPacket.Packet, connection: Connection, metadata?: MessageMetadata) {
+  constructor(packet: Packet | Buffer, connection: Connection, metadata?: MessageMetadata) {
     super();
     this.packet = new PacketWrapper(packet);
     this.connection = connection;
@@ -455,7 +498,7 @@ export class DNSRequest implements CanAnswer<DNSResponse> {
    * Handlers should use this object to attach any extra metadata if desired */
   extra: object | undefined;
 
-  constructor(packet: dnsPacket.Packet, connection: Connection) {
+  constructor(packet: Packet | Buffer, connection: Connection) {
     this.packet = new PacketWrapper(packet);
     this.connection = connection;
 
@@ -473,7 +516,7 @@ export class DNSRequest implements CanAnswer<DNSResponse> {
    * @returns A DNSResponse object that can be used to send a response to the client.
    */
   toAnswer(): DNSResponse {
-    const newPacket: dnsPacket.Packet = {
+    const newPacket: Packet = {
       ...this.packet.raw,
       type: 'response',
     };
