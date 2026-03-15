@@ -1,7 +1,7 @@
 import { Network, NetworkHandler, SupportedNetworkType, Connection } from './net';
 import { Serializer } from '../serializer';
 import dgram from 'dgram';
-import type * as dnsPacket from 'dns-packet';
+import type { Packet } from '../../types/dns';
 import { encode, decode, encodingLength, TRUNCATED_RESPONSE } from './dns';
 import { RCode, CombineFlags } from '../core/utils';
 import { DNSRequest } from '../../types';
@@ -11,8 +11,8 @@ import { isIPv6 } from 'net';
  * Serializer for the UDP protocol.  Uses the built-in zero-copy DNS codec –
  * no third-party runtime dependency required.
  */
-export class UDPSerializer implements Serializer<dnsPacket.Packet> {
-  encode(packet: dnsPacket.Packet): Buffer {
+export class UDPSerializer implements Serializer<Packet> {
+  encode(packet: Packet): Buffer {
     let packetSize = encodingLength(packet);
     if (packetSize > 512) {
       // bitwise OR to include the truncated response flag
@@ -48,7 +48,7 @@ export class UDPSerializer implements Serializer<dnsPacket.Packet> {
     return encode(packet);
   }
 
-  decode(buffer: Buffer): dnsPacket.Packet {
+  decode(buffer: Buffer): Packet {
     // Kept for compatibility; network handler now uses the raw buffer directly.
     return decode(buffer);
   }
@@ -63,7 +63,7 @@ export interface DNSOverUDPProps {
 /**
  * DNSOverUDP is a network interface for handling DNS requests over UDP.
  */
-export class DNSOverUDP implements Network<dnsPacket.Packet> {
+export class DNSOverUDP implements Network<Packet> {
   public address: string;
   public port: number;
   private server: dgram.Socket;

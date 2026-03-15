@@ -1,4 +1,4 @@
-import type * as dnsPacket from 'dns-packet';
+import type { Packet, Answer, Question } from '../types/dns';
 import { Connection } from '../common/network';
 import { CombineFlags, RCode } from '../common/core/utils';
 import { SupportedAnswer, SupportedQuestion } from '../types/dns';
@@ -95,8 +95,8 @@ export class PacketWrapper {
   private _flags: number | null = null;
   private _questions: SupportedQuestion[] | null = null;
   private _answers: SupportedAnswer[] = [];
-  private _authorities: dnsPacket.Answer[] = [];
-  private _additionals: dnsPacket.Answer[] = [];
+  private _authorities: Answer[] = [];
+  private _additionals: Answer[] = [];
 
   /** A flag to indicate whether the packet has been sent and is therefore frozen */
   frozen: boolean = false;
@@ -104,11 +104,11 @@ export class PacketWrapper {
   /**
    * Create a new packet wrapper.
    *
-   * @param source Either a plain `dnsPacket.Packet` JS object (legacy /
+   * @param source Either a plain `Packet` JS object (legacy /
    *   programmatically constructed) or a raw wire-format `Buffer` for
    *   zero-copy access.
    */
-  constructor(source: dnsPacket.Packet | Buffer) {
+  constructor(source: Packet | Buffer) {
     if (Buffer.isBuffer(source)) {
       // Zero-copy path: keep the raw buffer; parse header fields on demand.
       this._buf = source;
@@ -206,7 +206,7 @@ export class PacketWrapper {
     return this._questions;
   }
 
-  set questions(questions: dnsPacket.Question[]) {
+  set questions(questions: Question[]) {
     if (this.frozen) throw new ModifiedAfterSentError();
     this._questions = questions as SupportedQuestion[];
   }
@@ -220,20 +220,20 @@ export class PacketWrapper {
     this._answers = answers;
   }
 
-  get additionals(): ReadonlyArray<dnsPacket.Answer> {
+  get additionals(): ReadonlyArray<Answer> {
     return this._additionals;
   }
 
-  set additionals(additionals: dnsPacket.Answer[]) {
+  set additionals(additionals: Answer[]) {
     if (this.frozen) throw new ModifiedAfterSentError();
     this._additionals = additionals;
   }
 
-  get authorities(): ReadonlyArray<dnsPacket.Answer> {
+  get authorities(): ReadonlyArray<Answer> {
     return this._authorities;
   }
 
-  set authorities(authority: dnsPacket.Answer[]) {
+  set authorities(authority: Answer[]) {
     if (this.frozen) throw new ModifiedAfterSentError();
     this._authorities = authority;
   }
@@ -241,22 +241,22 @@ export class PacketWrapper {
   // ── legacy compatibility ───────────────────────────────────────────────────
 
   /**
-   * Return the packet as a plain `dnsPacket.Packet` JS object.
+   * Return the packet as a plain `Packet` JS object.
    *
    * This getter is provided for backward compatibility.  The returned object
    * is reconstructed from the internal state on every call, so consumers that
    * need to pass it to encoders should prefer calling the encoder directly
    * with the `PacketWrapper` instance via `encode(wrapper.raw)`.
    */
-  get raw(): dnsPacket.Packet {
+  get raw(): Packet {
     return {
       id: this.id,
       type: this.type,
       flags: this.flags,
-      questions: this.questions as dnsPacket.Question[],
-      answers: this.answers as dnsPacket.Answer[],
-      authorities: this.authorities as dnsPacket.Answer[],
-      additionals: this.additionals as dnsPacket.Answer[],
+      questions: this.questions as Question[],
+      answers: this.answers as Answer[],
+      authorities: this.authorities as Answer[],
+      additionals: this.additionals as Answer[],
     };
   }
 
@@ -336,7 +336,7 @@ export class DNSResponse extends TypedEventEmitter<DNSResponseEvents> {
    * Handlers should use this object to attach any extra metadata if desired */
   extra: object | undefined;
 
-  constructor(packet: dnsPacket.Packet | Buffer, connection: Connection, metadata?: MessageMetadata) {
+  constructor(packet: Packet | Buffer, connection: Connection, metadata?: MessageMetadata) {
     super();
     this.packet = new PacketWrapper(packet);
     this.connection = connection;
@@ -498,7 +498,7 @@ export class DNSRequest implements CanAnswer<DNSResponse> {
    * Handlers should use this object to attach any extra metadata if desired */
   extra: object | undefined;
 
-  constructor(packet: dnsPacket.Packet | Buffer, connection: Connection) {
+  constructor(packet: Packet | Buffer, connection: Connection) {
     this.packet = new PacketWrapper(packet);
     this.connection = connection;
 
@@ -516,7 +516,7 @@ export class DNSRequest implements CanAnswer<DNSResponse> {
    * @returns A DNSResponse object that can be used to send a response to the client.
    */
   toAnswer(): DNSResponse {
-    const newPacket: dnsPacket.Packet = {
+    const newPacket: Packet = {
       ...this.packet.raw,
       type: 'response',
     };

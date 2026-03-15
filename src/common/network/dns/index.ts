@@ -10,11 +10,10 @@
  * - Questions and resource records are parsed lazily, only when first accessed.
  * - Encoding builds a Buffer from the JS packet object.
  *
- * Types are still sourced from `@types/dns-packet` so the rest of the codebase
- * retains full TypeScript coverage.
+ * All DNS types are defined in-house in `src/types/dns.ts`.
  */
 
-import type * as dnsPacket from 'dns-packet';
+import type { Packet, Answer, Question, RecordType, RecordClass, DecodedPacket } from '../../../types/dns';
 
 // ─────────────────────────────────────────────
 // Flag constants (RFC 1035 §4.1.1)
@@ -35,7 +34,7 @@ export const RCODE_MASK = 0x000f;
 
 /**
  * Internal representation of a DNS resource record used by the codec.
- * `dnsPacket.Answer` is a large discriminated union that TypeScript cannot
+ * `Answer` is a large discriminated union that TypeScript cannot
  * easily index at runtime; this type names only the fields the codec actually
  * reads, avoiding unsafe double-casts at every use site.
  */
@@ -666,7 +665,7 @@ function encodeRdata(type: string, data: unknown, buf: Buffer, off: number): num
 // Resource-record decode helper
 // ─────────────────────────────────────────────
 
-function decodeRR(buf: Buffer, off: number): [dnsPacket.Answer, number] {
+function decodeRR(buf: Buffer, off: number): [Answer, number] {
   const [name, o1] = decodeName(buf, off);
   const typeNum = buf.readUInt16BE(o1);
   const classNum = buf.readUInt16BE(o1 + 2);
@@ -680,9 +679,9 @@ function decodeRR(buf: Buffer, off: number): [dnsPacket.Answer, number] {
 
   // Build via the internal RR interface then cast to the public Answer union.
   // All fields required by Answer are present; the cast is safe because the
-  // discriminant field `type` matches what dns-packet expects.
+  // discriminant field `type` matches what our codec defines.
   const record: RR = { type, name, ttl, class: klass, data };
-  return [record as unknown as dnsPacket.Answer, rdOff + rdlen];
+  return [record as unknown as Answer, rdOff + rdlen];
 }
 
 // ─────────────────────────────────────────────
@@ -694,10 +693,10 @@ function decodeRR(buf: Buffer, off: number): [dnsPacket.Answer, number] {
  * The header (12 bytes) is read without allocating any new objects for
  * the fields we don't need.
  */
-export function parseQuestions(buf: Buffer): dnsPacket.Question[] {
+export function parseQuestions(buf: Buffer): Question[] {
   if (buf.length < 12) return [];
   const count = buf.readUInt16BE(4);
-  const questions: dnsPacket.Question[] = [];
+  const questions: Question[] = [];
   let off = 12;
   for (let i = 0; i < count && off < buf.length; i++) {
     const [name, o1] = decodeName(buf, off);
@@ -705,8 +704,8 @@ export function parseQuestions(buf: Buffer): dnsPacket.Question[] {
     const classNum = buf.readUInt16BE(o1 + 2);
     questions.push({
       name,
-      type: (QTYPES_R[typeNum] ?? `TYPE${typeNum}`) as dnsPacket.RecordType,
-      class: (QCLASSES_R[classNum] ?? 'IN') as dnsPacket.RecordClass,
+      type: (QTYPES_R[typeNum] ?? `TYPE${typeNum}`) as RecordType,
+      class: (QCLASSES_R[classNum] ?? 'IN') as RecordClass,
     });
     off = o1 + 4;
   }
@@ -720,12 +719,12 @@ export function parseQuestions(buf: Buffer): dnsPacket.Question[] {
 /**
  * Decode a raw DNS wire-format buffer into a packet object.
  *
- * The returned object is a fully materialised `dnsPacket.Packet`.
+ * The returned object is a fully materialised {@link Packet}.
  * For incoming queries where only a subset of fields is needed, prefer
  * accessing them through {@link PacketWrapper} which reads lazily from
  * the underlying buffer.
  */
-export function decode(buf: Buffer): dnsPacket.Packet {
+export function decode(buf: Buffer): DecodedPacket {
   if (buf.length < 12) throw new Error('DNS buffer too short');
   const id = buf.readUInt16BE(0);
   const flags = buf.readUInt16BE(2);
@@ -737,45 +736,49 @@ export function decode(buf: Buffer): dnsPacket.Packet {
   const type: 'query' | 'response' = flags & QR_MASK ? 'response' : 'query';
   let off = 12;
 
-  const questions: dnsPacket.Question[] = [];
+  const questions: Question[] = [];
   for (let i = 0; i < qdcount; i++) {
     const [name, o1] = decodeName(buf, off);
     const typeNum = buf.readUInt16BE(o1);
     const classNum = buf.readUInt16BE(o1 + 2);
     questions.push({
       name,
-      type: (QTYPES_R[typeNum] ?? `TYPE${typeNum}`) as dnsPacket.RecordType,
-      class: (QCLASSES_R[classNum] ?? 'IN') as dnsPacket.RecordClass,
+      type: (QTYPES_R[typeNum] ?? `TYPE${typeNum}`) as RecordType,
+      class: (QCLASSES_R[classNum] ?? 'IN') as RecordClass,
     });
     off = o1 + 4;
   }
 
-  const answers: dnsPacket.Answer[] = [];
+  const answers: Answer[] = [];
   for (let i = 0; i < ancount; i++) {
     const [rr, o1] = decodeRR(buf, off); answers.push(rr); off = o1;
   }
-  const authorities: dnsPacket.Answer[] = [];
+  const authorities: Answer[] = [];
   for (let i = 0; i < nscount; i++) {
     const [rr, o1] = decodeRR(buf, off); authorities.push(rr); off = o1;
   }
-  const additionals: dnsPacket.Answer[] = [];
+  const additionals: Answer[] = [];
   for (let i = 0; i < arcount; i++) {
     const [rr, o1] = decodeRR(buf, off); additionals.push(rr); off = o1;
   }
 
-  const packet: dnsPacket.Packet = { id, type, flags, questions, answers, authorities, additionals };
-
-  // Populate the individual flag booleans so DecodedPacket consumers work correctly
-  (packet as Record<string, unknown>).flag_qr = !!(flags & QR_MASK);
-  (packet as Record<string, unknown>).flag_aa = !!(flags & AUTHORITATIVE_ANSWER);
-  (packet as Record<string, unknown>).flag_tc = !!(flags & TRUNCATED_RESPONSE);
-  (packet as Record<string, unknown>).flag_rd = !!(flags & RECURSION_DESIRED);
-  (packet as Record<string, unknown>).flag_ra = !!(flags & RECURSION_AVAILABLE);
-  (packet as Record<string, unknown>).flag_z  = false;
-  (packet as Record<string, unknown>).flag_ad = !!(flags & AUTHENTIC_DATA);
-  (packet as Record<string, unknown>).flag_cd = !!(flags & CHECKING_DISABLED);
-
-  return packet;
+  return {
+    id,
+    type,
+    flags,
+    questions,
+    answers,
+    authorities,
+    additionals,
+    flag_qr: !!(flags & QR_MASK),
+    flag_aa: !!(flags & AUTHORITATIVE_ANSWER),
+    flag_tc: !!(flags & TRUNCATED_RESPONSE),
+    flag_rd: !!(flags & RECURSION_DESIRED),
+    flag_ra: !!(flags & RECURSION_AVAILABLE),
+    flag_z: false,
+    flag_ad: !!(flags & AUTHENTIC_DATA),
+    flag_cd: !!(flags & CHECKING_DISABLED),
+  };
 }
 
 // ─────────────────────────────────────────────
@@ -783,7 +786,7 @@ export function decode(buf: Buffer): dnsPacket.Packet {
 // ─────────────────────────────────────────────
 
 /** Compute the encoded byte length of a packet without actually encoding it. */
-export function encodingLength(packet: dnsPacket.Packet): number {
+export function encodingLength(packet: Packet): number {
   let len = 12; // fixed header
   for (const q of packet.questions ?? []) {
     len += nameLen(q.name) + 4;
@@ -802,7 +805,7 @@ export function encodingLength(packet: dnsPacket.Packet): number {
 // ─────────────────────────────────────────────
 
 /** Encode a DNS packet object into wire-format bytes. */
-export function encode(packet: dnsPacket.Packet): Buffer {
+export function encode(packet: Packet): Buffer {
   const len = encodingLength(packet);
   const buf = Buffer.alloc(len);
 
@@ -845,7 +848,7 @@ export function encode(packet: dnsPacket.Packet): Buffer {
 // ─────────────────────────────────────────────
 
 /** Encode a packet with a 2-byte length prefix (DNS-over-TCP). */
-export function streamEncode(packet: dnsPacket.Packet): Buffer {
+export function streamEncode(packet: Packet): Buffer {
   const body = encode(packet);
   const buf = Buffer.alloc(2 + body.length);
   buf.writeUInt16BE(body.length, 0);
@@ -854,6 +857,6 @@ export function streamEncode(packet: dnsPacket.Packet): Buffer {
 }
 
 /** Decode a DNS-over-TCP message (skip 2-byte length prefix). */
-export function streamDecode(buf: Buffer): dnsPacket.Packet {
+export function streamDecode(buf: Buffer): DecodedPacket {
   return decode(buf.subarray(2));
 }

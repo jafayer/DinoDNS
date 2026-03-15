@@ -1,11 +1,11 @@
 import { PacketWrapper } from './server';
-import type * as dnsPacket from 'dns-packet';
+import type { Packet } from './dns';
 import { RCode } from '../common/core/utils';
 import { HasFlag } from '../common/core/utils';
 import { RECURSION_AVAILABLE, RECURSION_DESIRED } from '../common/network/dns';
 
 describe('PacketWrapper', () => {
-  const defaultPacket: dnsPacket.Packet = {
+  const defaultPacket: Packet = {
     type: 'response',
     id: 1,
     flags: 0,

@@ -2,7 +2,7 @@ import { DNSRequest, DNSResponse, NextFunction } from '../../types/server';
 import { Network } from '../network';
 import { Handler } from '../../types/server';
 import { DefaultRouter, Router } from '../router';
-import type * as dnsPacket from 'dns-packet';
+import type { Packet } from '../../types/dns';
 import cluster from 'cluster';
 import os from 'os';
 
@@ -44,8 +44,8 @@ export type DefaultServerProps<PacketType> = {
  * DefaultServer is extensible and can be configured with
  * custom middlewares, handlers, routers, loggers, networks, and caches.
  */
-export class DefaultServer implements DNSServer<dnsPacket.Packet> {
-  public networks: Network<dnsPacket.Packet>[] = [];
+export class DefaultServer implements DNSServer<Packet> {
+  public networks: Network<Packet>[] = [];
   private router: Router;
   public multithreaded: boolean;
 
@@ -54,7 +54,7 @@ export class DefaultServer implements DNSServer<dnsPacket.Packet> {
     router = new DefaultRouter(),
     multithreaded = false,
     defaultHandler,
-  }: DefaultServerProps<dnsPacket.Packet>) {
+  }: DefaultServerProps<Packet>) {
     this.networks = networks;
     this.router = router;
     this.multithreaded = multithreaded;

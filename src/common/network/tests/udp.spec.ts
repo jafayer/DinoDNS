@@ -1,5 +1,5 @@
 import { UDPSerializer } from '../udp';
-import type * as dnsPacket from 'dns-packet';
+import type { Packet, DecodedPacket } from '../../../types/dns';
 import { TRUNCATED_RESPONSE, encodingLength } from '../dns';
 
 describe('UDPSerializer', () => {
@@ -23,7 +23,7 @@ describe('UDPSerializer', () => {
   });
 
   it('Should be able to serialize queries', () => {
-    const query: dnsPacket.Packet = {
+    const query: Packet = {
       id: 1,
       questions: [
         {
@@ -47,7 +47,7 @@ describe('UDPSerializer', () => {
       data: '127.0.0.1',
     };
 
-    const packet: dnsPacket.Packet = {
+    const packet: Packet = {
       id: 1,
       flags: 0,
       questions: [
@@ -76,7 +76,7 @@ describe('UDPSerializer', () => {
     // check if the truncated flag is set
     expect(flags & TRUNCATED_RESPONSE).toBe(TRUNCATED_RESPONSE);
 
-    const decoded = udpSerializer.decode(response) as dnsPacket.DecodedPacket;
+    const decoded = udpSerializer.decode(response) as DecodedPacket;
 
     expect(decoded.flag_tc).toBe(true);
   });

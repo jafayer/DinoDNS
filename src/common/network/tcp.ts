@@ -1,7 +1,7 @@
 import net from 'net';
 import tls from 'tls';
 import { Serializer } from '../serializer';
-import type * as dnsPacket from 'dns-packet';
+import type { Packet } from '../../types/dns';
 import { Network, NetworkHandler, SupportedNetworkType, Connection, SSLConfig } from './net';
 import { DNSRequest } from '../../types';
 import { encode, streamEncode, streamDecode } from './dns';
@@ -9,12 +9,12 @@ import { encode, streamEncode, streamDecode } from './dns';
 /**
  * Serializer for the TCP protocol.  Uses the built-in zero-copy DNS codec.
  */
-export class TCPSerializer implements Serializer<dnsPacket.Packet> {
-  encode(packet: dnsPacket.Packet): Buffer {
+export class TCPSerializer implements Serializer<Packet> {
+  encode(packet: Packet): Buffer {
     return streamEncode(packet);
   }
 
-  decode(buffer: Buffer): dnsPacket.Packet {
+  decode(buffer: Buffer): Packet {
     return streamDecode(buffer);
   }
 }
@@ -32,7 +32,7 @@ export interface DNSOverTCPProps {
 /**
  * DNSOverTCP is a network interface for handling DNS requests over TCP.
  */
-export class DNSOverTCP implements Network<dnsPacket.Packet> {
+export class DNSOverTCP implements Network<Packet> {
   public address: string;
   public port: number;
   public server: net.Server | tls.Server;

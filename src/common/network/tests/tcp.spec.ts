@@ -1,5 +1,5 @@
 import { TCPSerializer } from '../tcp';
-import type * as dnsPacket from 'dns-packet';
+import type { Packet } from '../../../types/dns';
 
 describe('TCPSerializer', () => {
   let tcpSerializer: TCPSerializer;
@@ -21,7 +21,7 @@ describe('TCPSerializer', () => {
   });
 
   it('Should be able to serialize queries', () => {
-    const query: dnsPacket.Packet = {
+    const query: Packet = {
       id: 1,
       questions: [
         {
