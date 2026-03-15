@@ -1,6 +1,6 @@
 import { UDPSerializer } from '../udp';
-import dnsPacket from 'dns-packet';
-import { TRUNCATED_RESPONSE } from 'dns-packet';
+import type * as dnsPacket from 'dns-packet';
+import { TRUNCATED_RESPONSE, encodingLength } from '../dns';
 
 describe('UDPSerializer', () => {
   const queryPacket = Buffer.from(
@@ -62,7 +62,7 @@ describe('UDPSerializer', () => {
 
     expect(packet.answers!.length).toBe(1000);
 
-    expect(dnsPacket.encodingLength(packet)).toBeGreaterThan(512);
+    expect(encodingLength(packet)).toBeGreaterThan(512);
 
     const response = udpSerializer.encode(packet);
 

@@ -2,7 +2,8 @@ import http2 from 'http2';
 import { Network, NetworkHandler, SupportedNetworkType, Connection, SSLConfig } from './net';
 import { EventEmitter } from 'events';
 import { DNSPacketSerializer } from '../serializer';
-import dnsPacket from 'dns-packet';
+import type * as dnsPacket from 'dns-packet';
+import { decode } from './dns';
 import { DNSRequest } from '../../types';
 
 export interface DNSOverHTTPProps {
@@ -72,7 +73,7 @@ function constructPacketFromQuery(query: URLSearchParams): dnsPacket.Packet | un
   const type = query.get('type');
 
   if (dns) {
-    return dnsPacket.decode(Buffer.from(dns, 'base64'));
+    return decode(Buffer.from(dns, 'base64'));
   } else if (name && type) {
     return {
       type: 'query',

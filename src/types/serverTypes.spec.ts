@@ -1,8 +1,8 @@
 import { PacketWrapper } from './server';
-import dnsPacket from 'dns-packet';
+import type * as dnsPacket from 'dns-packet';
 import { RCode } from '../common/core/utils';
 import { HasFlag } from '../common/core/utils';
-import { RECURSION_AVAILABLE, RECURSION_DESIRED } from 'dns-packet';
+import { RECURSION_AVAILABLE, RECURSION_DESIRED } from '../common/network/dns';
 
 describe('PacketWrapper', () => {
   const defaultPacket: dnsPacket.Packet = {

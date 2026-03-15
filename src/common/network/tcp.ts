@@ -1,21 +1,21 @@
 import net from 'net';
 import tls from 'tls';
 import { Serializer } from '../serializer';
-import dnsPacket from 'dns-packet';
+import type * as dnsPacket from 'dns-packet';
 import { Network, NetworkHandler, SupportedNetworkType, Connection, SSLConfig } from './net';
 import { DNSRequest } from '../../types';
+import { encode, streamEncode, streamDecode } from './dns';
 
 /**
- * Serializer for the TCP protocol. The `dns-packet` module's
- * `streamDecode` and `streamEncode` methods are passed directly through here.
+ * Serializer for the TCP protocol.  Uses the built-in zero-copy DNS codec.
  */
 export class TCPSerializer implements Serializer<dnsPacket.Packet> {
   encode(packet: dnsPacket.Packet): Buffer {
-    return dnsPacket.streamEncode(packet);
+    return streamEncode(packet);
   }
 
   decode(buffer: Buffer): dnsPacket.Packet {
-    return dnsPacket.streamDecode(buffer);
+    return streamDecode(buffer);
   }
 }
 
@@ -92,8 +92,10 @@ export class DNSOverTCP implements Network<dnsPacket.Packet> {
             return endSocket(new Error('No handler defined for DNSOverTCP'));
           }
 
-          const packet = dnsPacket.streamDecode(data);
-          const request = new DNSRequest(packet, this.toConnection(socket));
+          // Zero-copy path: skip the 2-byte length prefix, then pass the raw DNS buffer
+          // directly to DNSRequest so PacketWrapper can read the header lazily.
+          const dnsBuffer = data.subarray(2);
+          const request = new DNSRequest(dnsBuffer, this.toConnection(socket));
           request.metadata.ts.requestTimeNs = startTime; // override the request time with the time the request was received
           request.metadata.ts.requestTimeMs = startTimeMs; // override the request time with the time the request was received
           const response = await this.handler(request);

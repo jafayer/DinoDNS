@@ -1,5 +1,5 @@
 import { TCPSerializer } from '../tcp';
-import dnsPacket from 'dns-packet';
+import type * as dnsPacket from 'dns-packet';
 
 describe('TCPSerializer', () => {
   let tcpSerializer: TCPSerializer;

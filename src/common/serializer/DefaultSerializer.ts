@@ -1,12 +1,13 @@
 import { Serializer } from './serializers';
-import dnsPacket from 'dns-packet';
+import type * as dnsPacket from 'dns-packet';
+import { encode, decode } from '../network/dns';
 
 export class DNSPacketSerializer implements Serializer<dnsPacket.Packet> {
   encode(packet: dnsPacket.Packet): Buffer {
-    return dnsPacket.encode(packet);
+    return encode(packet);
   }
 
   decode(buffer: Buffer): dnsPacket.Packet {
-    return dnsPacket.decode(buffer);
+    return decode(buffer);
   }
 }
