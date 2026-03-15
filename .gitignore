@@ -24,3 +24,12 @@ Thumbs.db
 
 # Docs
 docs/
+# Load test generated outputs and results
+load-test/output/
+load-test/results/
+
+# Terraform state and local data
+load-test/terraform/.terraform/
+load-test/terraform/.terraform.lock.hcl
+load-test/terraform/terraform.tfstate
+load-test/terraform/terraform.tfstate.backup
